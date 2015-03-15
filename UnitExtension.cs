@@ -1,36 +1,95 @@
-﻿using Styx;
-using Styx.TreeSharp;
+﻿using System.Collections.Generic;
+using Styx;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SimcBasedCoRo
-{ 
+{
     public static class UnitExtension
     {
+        #region Constant
+
         private const int BannerOfTheAlliance = 61573;
         private const int BannerOfTheHorde = 61574;
 
-        public static bool IsTrainingDummy(this WoWUnit unit)
+        #endregion
+
+        #region Fields
+
+        private static readonly DateTime _timeOrigin = new DateTime(2012, 1, 1); // Refernzdatum (festgelegt)
+        private static uint _currentLife; // life of mob now
+        private static int _currentTime; // time now
+        private static uint _firstLife; // life of mob when first seen
+        private static uint _firstLifeMax; // max life of mob when first seen
+        private static int _firstTime; // time mob was first seen
+
+        private static WoWGuid _guid;
+
+        #endregion
+
+        #region Public Methods
+
+        public static uint GetAuraStacks(this WoWUnit onUnit, string auraName, bool fromMyAura = true)
         {
-            // return Lists.BossList.TrainingDummies.Contains(unit.Entry);
-            
-            int bannerId = StyxWoW.Me.IsHorde ? BannerOfTheAlliance : BannerOfTheHorde;
-            return unit != null && unit.Level > 1 
-                && ((unit.CurrentHealth == 1 && unit.MaxHealth < unit.Level) || unit.HasAura(bannerId) || unit.Name.Contains("Training Dummy"));
+            if (onUnit == null)
+                return 0;
+
+            var wantedAura =
+                onUnit.GetAllAuras()
+                    .FirstOrDefault(
+                        a =>
+                            a.Name == auraName && a.TimeLeft > TimeSpan.Zero &&
+                            (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid));
+
+            if (wantedAura == null)
+                return 0;
+
+            return wantedAura.StackCount == 0 ? 1 : wantedAura.StackCount;
         }
 
-        public static WoWGuid guid { get; set; }  // guid of mob
+        public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, string auraName, bool fromMyAura = true)
+        {
+            if (onUnit == null)
+                return TimeSpan.Zero;
 
-        private static uint _firstLife;         // life of mob when first seen
-        private static uint _firstLifeMax;      // max life of mob when first seen
-        private static int _firstTime;          // time mob was first seen
-        private static uint _currentLife;       // life of mob now
-        private static int _currentTime;        // time now
+            var wantedAura =
+                onUnit.GetAllAuras()
+                    .FirstOrDefault(
+                        a =>
+                            a != null && a.Name == auraName && a.TimeLeft > TimeSpan.Zero &&
+                            (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid));
+
+            return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
+        }
+
+        public static bool HasAllMyAuras(this WoWUnit unit, params string[] auras)
+        {
+            return auras.All(unit.HasMyAura);
+        }
+
+        public static bool HasAnyOfMyAuras(this WoWUnit unit, params string[] auraNames)
+        {
+            var auras = unit.GetAllAuras();
+            var hashes = new HashSet<string>(auraNames);
+            return auras.Any(a => a.CreatorGuid == StyxWoW.Me.Guid && hashes.Contains(a.Name));
+        }
+
+        public static IEnumerable<WoWUnit> UnfriendlyUnits(this WoWUnit unit, int maxSpellDist = -1)
+        {
+            return ObjectManager.ObjectList.OfType<WoWUnit>().Where(u => u != null && u.IsAggressive() && (maxSpellDist == -1 || u.Location.Distance(unit.Location) < maxSpellDist)).ToList();
+        }
+
+        /// <summary>
+        /// checks if unit is targeting you, your minions, a group member, or group pets
+        /// </summary>
+        /// <param name="u">unit</param>
+        /// <returns>true if targeting your guys, false if not</returns>
+        private static bool IsAggressive(this WoWUnit u)
+        {
+            return u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingAnyMinion || u.IsTargetingMyPartyMember || u.IsTargetingMyRaidMember);
+        }
 
         /// <summary>
         /// seconds until the target dies.  first call initializes values. subsequent
@@ -49,13 +108,13 @@ namespace SimcBasedCoRo
 
             if (StyxWoW.Me.CurrentTarget.IsTrainingDummy())
             {
-                return 111;     // pick a magic number since training dummies dont die
+                return 111; // pick a magic number since training dummies dont die
             }
 
             //Fill variables on new target or on target switch, this will loose all calculations from last target
-            if (guid != target.Guid || (guid == target.Guid && target.CurrentHealth == _firstLifeMax))
+            if (_guid != target.Guid || (_guid == target.Guid && target.CurrentHealth == _firstLifeMax))
             {
-                guid = target.Guid;
+                _guid = target.Guid;
                 _firstLife = target.CurrentHealth;
                 _firstLifeMax = target.MaxHealth;
                 _firstTime = ConvDate2Timestam(DateTime.Now);
@@ -63,8 +122,8 @@ namespace SimcBasedCoRo
             }
             _currentLife = target.CurrentHealth;
             _currentTime = ConvDate2Timestam(DateTime.Now);
-            int timeDiff = _currentTime - _firstTime;
-            uint hpDiff = _firstLife - _currentLife;
+            var timeDiff = _currentTime - _firstTime;
+            var hpDiff = _firstLife - _currentLife;
             if (hpDiff > 0)
             {
                 /*
@@ -76,19 +135,19 @@ namespace SimcBasedCoRo
                 * 
                 * For those that forgot, http://mathforum.org/library/drmath/view/60822.html
                 */
-                long fullTime = timeDiff * _firstLifeMax / hpDiff;
-                long pastFirstTime = (_firstLifeMax - _firstLife) * timeDiff / hpDiff;
-                long calcTime = _firstTime - pastFirstTime + fullTime - _currentTime;
+                var fullTime = timeDiff*_firstLifeMax/hpDiff;
+                var pastFirstTime = (_firstLifeMax - _firstLife)*timeDiff/hpDiff;
+                var calcTime = _firstTime - pastFirstTime + fullTime - _currentTime;
                 if (calcTime < 1) calcTime = 1;
                 //calc_time is a int value for time to die (seconds) so there's no need to do SecondsToTime(calc_time)
-                long timeToDie = calcTime;
+                var timeToDie = calcTime;
                 //Logging.Write("TimeToDeath: {0} (GUID: {1}, Entry: {2}) dies in {3}, you are dpsing with {4} dps", target.SafeName(), target.Guid, target.Entry, timeToDie, dps);
                 return timeToDie;
             }
             if (hpDiff <= 0)
             {
                 //unit was healed,resetting the initial values
-                guid = target.Guid;
+                _guid = target.Guid;
                 _firstLife = target.CurrentHealth;
                 _firstLifeMax = target.MaxHealth;
                 _firstTime = ConvDate2Timestam(DateTime.Now);
@@ -105,52 +164,45 @@ namespace SimcBasedCoRo
             return indeterminateValue;
         }
 
-        private static readonly DateTime timeOrigin = new DateTime(2012, 1, 1); // Refernzdatum (festgelegt)
+        #endregion
+
+        #region Private Methods
 
         private static int ConvDate2Timestam(DateTime time)
         {
-#if PREV
-                DateTime baseLine = new DateTime(1970, 1, 1); // Refernzdatum (festgelegt)
-                DateTime date2 = time; // jetztiges Datum / Uhrzeit
-                var ts = new TimeSpan(date2.Ticks - baseLine.Ticks); // das Delta ermitteln
-                // Das Delta als gesammtzahl der sekunden ist der Timestamp
-                return (Convert.ToInt32(ts.TotalSeconds));
-#else
-            return (int)(time - timeOrigin).TotalSeconds;
-#endif
-        }
-
-        public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, string auraName, bool fromMyAura = true)
-        {
-            if (onUnit == null)
-                return TimeSpan.Zero;
-
-            WoWAura wantedAura =
-                onUnit.GetAllAuras().Where(a => a != null && a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid)).FirstOrDefault();
-
-            return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
-        }
-
-        public static bool HasAllMyAuras(this WoWUnit unit, params string[] auras)
-        {
-            return auras.All(a => unit.HasMyAura(a));
-        }
-
-        public static bool HasMyAura(this WoWUnit unit, string aura)
-        {
-            return HasMyAura(unit, aura, 0);
-        }        
-
-        public static bool HasMyAura(this WoWUnit unit, string aura, int stacks)
-        {
-            return HasAura(unit, aura, stacks, StyxWoW.Me);
+            return (int) (time - _timeOrigin).TotalSeconds;
         }
 
         private static bool HasAura(this WoWUnit unit, string aura, int stacks, WoWUnit creator)
         {
-            if (unit == null)
-                return false;
-            return unit.GetAllAuras().Any(a => a.Name == aura && a.StackCount >= stacks && (creator == null || a.CreatorGuid == creator.Guid));
+            if (unit == null) return false;
+
+            return
+                unit.GetAllAuras()
+                    .Any(
+                        a =>
+                            a.Name == aura && a.StackCount >= stacks &&
+                            (creator == null || a.CreatorGuid == creator.Guid));
         }
+
+        private static bool HasMyAura(this WoWUnit unit, string aura)
+        {
+            return HasMyAura(unit, aura, 0);
+        }
+
+        private static bool HasMyAura(this WoWUnit unit, string aura, int stacks)
+        {
+            return HasAura(unit, aura, stacks, StyxWoW.Me);
+        }
+
+        private static bool IsTrainingDummy(this WoWUnit unit)
+        {
+            var bannerId = StyxWoW.Me.IsHorde ? BannerOfTheAlliance : BannerOfTheHorde;
+            return unit != null && unit.Level > 1 &&
+                   ((unit.CurrentHealth == 1 && unit.MaxHealth < unit.Level) || unit.HasAura(bannerId) ||
+                    unit.Name.Contains("Training Dummy"));
+        }
+
+        #endregion
     }
 }

@@ -5,6 +5,8 @@ using Styx.WoWInternals.WoWObjects;
 
 namespace SimcBasedCoRo.ClassSpecific
 {
+    // ReSharper disable InconsistentNaming
+
     public abstract class Common
     {
         #region Properties
@@ -16,16 +18,28 @@ namespace SimcBasedCoRo.ClassSpecific
 
         protected static int active_enemies
         {
-            get { return active_enemies_list.Count; }
+            get { return active_enemies_list.Count(); }
         }
 
-        protected static List<WoWUnit> active_enemies_list
+        protected static IEnumerable<WoWUnit> active_enemies_list
         {
             get
             {
+                var distance = 40;
+
+                switch (StyxWoW.Me.Specialization)
+                {
+                    case WoWSpec.DeathKnightUnholy:
+                        distance = TalentManager.HasGlyph(DeathKnight.DeathKnight.blood_boil) ? 15 : 10;
+                        break;
+                    case WoWSpec.DeathKnightBlood:
+                        distance = 20;
+                        break;
+                }
+
                 return
-                    Common.Scenario.Mobs.Where(x => x.Distance < (TalentManager.HasGlyph("Blood Boil") ? 15 : 10))
-                        .ToList();
+                    StyxWoW.Me.UnfriendlyUnits()
+                        .Where(x => x.Distance < distance);
             }
         }
 
@@ -36,4 +50,6 @@ namespace SimcBasedCoRo.ClassSpecific
 
         #endregion
     }
+
+    // ReSharper restore InconsistentNaming
 }

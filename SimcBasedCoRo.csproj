@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SimcBasedCoRo</RootNamespace>
     <AssemblyName>SimcBasedCoRo</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -43,11 +44,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClassSpecific\Common.cs" />
+    <Compile Include="ActionList.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\buff.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\cooldown.cs" />
     <Compile Include="ClassSpecific\DeathKnight\DeathKnight.cs" />
-    <Compile Include="ClassSpecific\DeathKnight\Unholy.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\disease.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\dot.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\obliterate.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\talent.cs" />
+    <Compile Include="ClassSpecific\DeathKnight\target.cs" />
+    <Compile Include="ISpellRun.cs" />
     <Compile Include="SimCraftCombatRoutine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Spell.cs" />
+    <Compile Include="SpellResult.cs" />
+    <Compile Include="TalentManager.cs" />
     <Compile Include="UnitExtension.cs" />
   </ItemGroup>
   <ItemGroup />
