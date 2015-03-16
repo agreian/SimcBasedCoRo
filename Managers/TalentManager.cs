@@ -56,11 +56,7 @@ namespace SimcBasedCoRo.Managers
             {
                 for (var col = 0; col < 3; col++)
                 {
-                    var selected =
-                        Lua.GetReturnVal<bool>(
-                            string.Format(
-                                "local t = select(4, GetTalentInfo({0}, {1}, GetActiveSpecGroup())) if t then return 1 end return nil",
-                                row + 1, col + 1), 0);
+                    var selected = Lua.GetReturnVal<bool>(string.Format("local t = select(4, GetTalentInfo({0}, {1}, GetActiveSpecGroup())) if t then return 1 end return nil", row + 1, col + 1), 0);
                     var index = 1 + row*3 + col;
 
                     if (selected)
@@ -76,8 +72,7 @@ namespace SimcBasedCoRo.Managers
                 var glyphInfo = Lua.GetReturnValues(String.Format("return GetGlyphSocketInfo({0})", i));
 
                 // add check for 4 members before access because empty sockets weren't returning 'nil' as documented
-                if (glyphInfo != null && glyphInfo.Count >= 4 && glyphInfo[3] != "nil" &&
-                    !string.IsNullOrEmpty(glyphInfo[3]))
+                if (glyphInfo != null && glyphInfo.Count >= 4 && glyphInfo[3] != "nil" && !string.IsNullOrEmpty(glyphInfo[3]))
                 {
                     _glyphs.Add(WoWSpell.FromId(int.Parse(glyphInfo[3])).Name.Replace("Glyph of ", "").Trim());
                 }

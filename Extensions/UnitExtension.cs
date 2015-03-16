@@ -19,12 +19,12 @@ namespace SimcBasedCoRo.Extensions
         #region Fields
 
         private static readonly DateTime _timeOrigin = new DateTime(2012, 1, 1); // Refernzdatum (festgelegt)
+
         private static uint _currentLife; // life of mob now
         private static int _currentTime; // time now
         private static uint _firstLife; // life of mob when first seen
         private static uint _firstLifeMax; // max life of mob when first seen
         private static int _firstTime; // time mob was first seen
-
         private static WoWGuid _guid;
 
         #endregion
@@ -36,12 +36,7 @@ namespace SimcBasedCoRo.Extensions
             if (onUnit == null)
                 return 0;
 
-            var wantedAura =
-                onUnit.GetAllAuras()
-                    .FirstOrDefault(
-                        a =>
-                            a.Name == auraName && a.TimeLeft > TimeSpan.Zero &&
-                            (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid));
+            var wantedAura = onUnit.GetAllAuras().FirstOrDefault(a => a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid));
 
             if (wantedAura == null)
                 return 0;
@@ -54,12 +49,7 @@ namespace SimcBasedCoRo.Extensions
             if (onUnit == null)
                 return TimeSpan.Zero;
 
-            var wantedAura =
-                onUnit.GetAllAuras()
-                    .FirstOrDefault(
-                        a =>
-                            a != null && a.Name == auraName && a.TimeLeft > TimeSpan.Zero &&
-                            (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid));
+            var wantedAura = onUnit.GetAllAuras().FirstOrDefault(a => a != null && a.Name == auraName && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid));
 
             return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
         }
@@ -172,12 +162,7 @@ namespace SimcBasedCoRo.Extensions
         {
             if (unit == null) return false;
 
-            return
-                unit.GetAllAuras()
-                    .Any(
-                        a =>
-                            a.Name == aura && a.StackCount >= stacks &&
-                            (creator == null || a.CreatorGuid == creator.Guid));
+            return unit.GetAllAuras().Any(a => a.Name == aura && a.StackCount >= stacks && (creator == null || a.CreatorGuid == creator.Guid));
         }
 
         private static bool HasMyAura(this WoWUnit unit, string aura)
@@ -193,9 +178,8 @@ namespace SimcBasedCoRo.Extensions
         private static bool IsTrainingDummy(this WoWUnit unit)
         {
             var bannerId = StyxWoW.Me.IsHorde ? BANNER_OF_THE_ALLIANCE : BANNER_OF_THE_HORDE;
-            return unit != null && unit.Level > 1 &&
-                   ((unit.CurrentHealth == 1 && unit.MaxHealth < unit.Level) || unit.HasAura(bannerId) ||
-                    unit.Name.Contains("Training Dummy"));
+
+            return unit != null && unit.Level > 1 && ((unit.CurrentHealth == 1 && unit.MaxHealth < unit.Level) || unit.HasAura(bannerId) || unit.Name.Contains("Training Dummy"));
         }
 
         #endregion

@@ -116,7 +116,7 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
 
         #region Properties
 
-        public static ActionList Unholy
+        public static ActionList UnholyActionList
         {
             get
             {
@@ -130,6 +130,31 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
                     new ActionList(unholy_single_target, () => (!talent.necrotic_plague_enabled && active_enemies < 2) || active_enemies < 4)
                 };
             }
+        }
+
+        private static int blood
+        {
+            get { return Me.GetRuneCount(0) + Me.GetRuneCount(1); }
+        }
+
+        private static int death
+        {
+            get { return Me.GetRuneCount(RuneType.Death); }
+        }
+
+        private static int frost
+        {
+            get { return Me.GetRuneCount(2) + Me.GetRuneCount(3); }
+        }
+
+        private static uint runic_power
+        {
+            get { return StyxWoW.Me.CurrentRunicPower; }
+        }
+
+        private static int unholy
+        {
+            get { return Me.GetRuneCount(4) + Me.GetRuneCount(5); }
         }
 
         private static ActionList unholy_aoe
@@ -147,6 +172,7 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
                     //actions.aoe+=/breath_of_sindragosa,if=runic_power>75
                     new Spell(breath_of_sindragosa, () => runic_power > 75 && !Me.HasAura(breath_of_sindragosa)),
                     //actions.aoe+=/run_action_list,name=bos_aoe,if=dot.breath_of_sindragosa.ticking
+                    new ActionList(unholy_bos_aoe, () => dot.breath_of_sindragosa_ticking),
                     //actions.aoe+=/blood_boil,if=blood=2|(frost=2&death=2)
                     new Spell(blood_boil, () => (blood == 2 || (frost == 2 && death == 2))),
                     //actions.aoe+=/summon_gargoyle
@@ -185,6 +211,56 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
             }
         }
 
+        private static ActionList unholy_bos_aoe
+        {
+            get
+            {
+                return new ActionList
+                {
+                    //actions.bos_aoe=death_and_decay,if=runic_power<88
+                    new Spell(death_and_decay, () => runic_power < 88),
+                    //actions.bos_aoe+=/blood_boil,if=runic_power<88
+                    new Spell(blood_boil, () => runic_power < 88),
+                    //actions.bos_aoe+=/scourge_strike,if=runic_power<88&unholy=1
+                    new Spell(scourge_strike, () => runic_power < 88 && unholy == 1),
+                    //actions.bos_aoe+=/icy_touch,if=runic_power<88
+                    new Spell(icy_touch, () => runic_power < 88),
+                    //actions.bos_aoe+=/blood_tap,if=buff.blood_charge.stack>=5
+                    new Spell(blood_tap, () => buff.blood_charge_stack >= 5),
+                    //actions.bos_aoe+=/plague_leech
+                    new Spell(plague_leech, () => disease.min_ticking),
+                    //actions.bos_aoe+=/empower_rune_weapon
+                    new Spell(empower_rune_weapon),
+                    //actions.bos_aoe+=/death_coil,if=buff.sudden_doom.react
+                    new Spell(death_coil, () => buff.sudden_doom_react),
+                };
+            }
+        }
+
+        private static ActionList unholy_bos_st
+        {
+            get
+            {
+                return new ActionList
+                {
+                    //actions.bos_st=death_and_decay,if=runic_power<88
+                    new Spell(death_and_decay, () => runic_power < 88),
+                    //actions.bos_st+=/festering_strike,if=runic_power<77
+                    new Spell(festering_strike, () => runic_power < 77),
+                    //actions.bos_st+=/scourge_strike,if=runic_power<88
+                    new Spell(scourge_strike, () => runic_power < 88),
+                    //actions.bos_st+=/blood_tap,if=buff.blood_charge.stack>=5
+                    new Spell(blood_tap, () => buff.blood_charge_stack >= 5),
+                    //actions.bos_st+=/plague_leech
+                    new Spell(plague_leech, () => disease.min_ticking),
+                    //actions.bos_st+=/empower_rune_weapon
+                    new Spell(empower_rune_weapon),
+                    //actions.bos_st+=/death_coil,if=buff.sudden_doom.react
+                    new Spell(death_coil, () => buff.sudden_doom_react),
+                };
+            }
+        }
+
         private static ActionList unholy_single_target
         {
             get
@@ -210,6 +286,7 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
                     //actions.single_target+=/breath_of_sindragosa,if=runic_power>75
                     new Spell(breath_of_sindragosa, () => runic_power > 75 && !Me.HasAura(breath_of_sindragosa)),
                     //actions.single_target+=/run_action_list,name=bos_st,if=dot.breath_of_sindragosa.ticking
+                    new ActionList(unholy_bos_st, () => dot.breath_of_sindragosa_ticking),
                     //actions.single_target+=/death_and_decay,if=cooldown.breath_of_sindragosa.remains<7&runic_power<88&talent.breath_of_sindragosa.enabled
                     new Spell(death_and_decay, () => cooldown.breath_of_sindragosa_remains < 7 && runic_power < 88 && talent.breath_of_sindragosa_enabled),
                     //actions.single_target+=/scourge_strike,if=cooldown.breath_of_sindragosa.remains<7&runic_power<88&talent.breath_of_sindragosa.enabled
@@ -295,38 +372,13 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
                 return new ActionList
                 {
                     //actions.spread=blood_boil,cycle_targets=1,if=!disease.min_ticking
-                    new Spell(blood_boil,() =>active_enemies_list.Count(u => !disease.ticking_on(u)) > 0 ),
+                    new Spell(blood_boil, () => active_enemies_list.Count(u => !disease.ticking_on(u)) > 0 && active_enemies_list.Any(disease.ticking_on)),
                     //actions.spread+=/outbreak,if=!disease.min_ticking
                     new Spell(outbreak, () => !disease.min_ticking),
                     //actions.spread+=/plague_strike,if=!disease.min_ticking
                     new Spell(plague_strike, () => !disease.min_ticking)
                 };
             }
-        }
-
-        private static int blood
-        {
-            get { return Me.GetRuneCount(0) + Me.GetRuneCount(1); }
-        }
-
-        private static int death
-        {
-            get { return Me.GetRuneCount(RuneType.Death); }
-        }
-
-        private static int frost
-        {
-            get { return Me.GetRuneCount(2) + Me.GetRuneCount(3); }
-        }
-
-        private static uint runic_power
-        {
-            get { return StyxWoW.Me.CurrentRunicPower; }
-        }
-
-        private static int unholy
-        {
-            get { return Me.GetRuneCount(4) + Me.GetRuneCount(5); }
         }
 
         #endregion
@@ -565,7 +617,7 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
 
             public static double necrotic_plague_remains
             {
-                get { return StyxWoW.Me.CurrentTarget.GetAuraTimeLeft(necrotic_plague).TotalSeconds; }
+                get { return Remains(necrotic_plague); }
             }
 
             public static bool necrotic_plague_ticking
@@ -575,35 +627,26 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
 
             private static double blood_plague_remains
             {
-                get { return StyxWoW.Me.CurrentTarget.GetAuraTimeLeft(blood_plague).TotalSeconds; }
+                get { return Remains(blood_plague); }
             }
 
             private static double breath_of_sindragosa_remains
             {
-                get { return StyxWoW.Me.CurrentTarget.GetAuraTimeLeft(breath_of_sindragosa).TotalSeconds; }
+                get { return Remains(breath_of_sindragosa); }
             }
 
             private static double frost_fever_remains
             {
-                get { return StyxWoW.Me.CurrentTarget.GetAuraTimeLeft(frost_fever).TotalSeconds; }
-            }
-
-            #endregion
-
-            #region Public Methods
-
-            public static bool necrotic_plague_ticking_on(WoWUnit unit)
-            {
-                return necrotic_plague_remains_on(unit) > 0;
+                get { return Remains(frost_fever); }
             }
 
             #endregion
 
             #region Private Methods
 
-            private static double necrotic_plague_remains_on(WoWUnit unit)
+            private static double Remains(string aura)
             {
-                return unit.GetAuraTimeLeft(necrotic_plague).TotalSeconds;
+                return StyxWoW.Me.CurrentTarget.GetAuraTimeLeft(aura).TotalSeconds;
             }
 
             #endregion

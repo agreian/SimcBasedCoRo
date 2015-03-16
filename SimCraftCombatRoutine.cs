@@ -52,7 +52,7 @@ namespace SimcBasedCoRo
                 switch (_specialization)
                 {
                     case WoWSpec.DeathKnightUnholy:
-                        _currentActionList = DeathKnight.Unholy;
+                        _currentActionList = DeathKnight.UnholyActionList;
                         break;
                 }
             }
