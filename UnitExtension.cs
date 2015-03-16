@@ -76,9 +76,9 @@ namespace SimcBasedCoRo
             return auras.Any(a => a.CreatorGuid == StyxWoW.Me.Guid && hashes.Contains(a.Name));
         }
 
-        public static IEnumerable<WoWUnit> UnfriendlyUnits(this WoWUnit unit, int maxSpellDist = -1)
+        public static IEnumerable<WoWUnit> UnfriendlyUnits(this WoWUnit unit)
         {
-            return ObjectManager.ObjectList.OfType<WoWUnit>().Where(u => u != null && u.IsAggressive() && (maxSpellDist == -1 || u.Location.Distance(unit.Location) < maxSpellDist)).ToList();
+            return ObjectManager.ObjectList.OfType<WoWUnit>().Where(u => u != null && u.IsAggressive());
         }
 
         /// <summary>

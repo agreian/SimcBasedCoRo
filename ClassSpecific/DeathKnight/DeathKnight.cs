@@ -67,6 +67,7 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
                 return new ActionList
                 {
                     // # Executed every time the actor is available.
+                    new Spell(SpellType.Buff, "Raise Dead", req => !StyxWoW.Me.GotAlivePet),
                     //actions+=/run_action_list,name=aoe,if=(!talent.necrotic_plague.enabled&active_enemies>=2)|active_enemies>=4
                     new ActionList(
                         req => (!talent.necrotic_plague_enabled && active_enemies >= 2) || active_enemies >= 4,
@@ -126,7 +127,7 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
                     //actions.aoe+=/blood_boil
                     new Spell(SpellType.Cast, blood_boil, req => Spell.UseAoe),
                     //actions.aoe+=/icy_touch
-                    new Spell(SpellType.Buff, icy_touch),
+                    new Spell(SpellType.Cast, icy_touch),
                     //actions.aoe+=/scourge_strike,if=unholy=1
                     new Spell(SpellType.Cast, scourge_strike, req => unholy == 1),
                     //actions.aoe+=/death_coil
@@ -199,7 +200,7 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
                     //actions.single_target+=/defile,if=unholy=2
                     new Spell(SpellType.CastOnGround, defile, req => Spell.UseAoe && unholy == 2, on => Me.CurrentTarget),
                     //actions.single_target+=/plague_strike,if=!disease.min_ticking&unholy=2
-                    new Spell(SpellType.Buff, plague_strike, req => !disease.min_ticking && unholy == 2),
+                    new Spell(SpellType.Cast, plague_strike, req => !disease.min_ticking && unholy == 2),
                     //actions.single_target+=/scourge_strike,if=unholy=2
                     new Spell(SpellType.Cast, scourge_strike, req => unholy == 2),
                     //actions.single_target+=/death_coil,if=runic_power>80
@@ -219,7 +220,7 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
                     new Spell(SpellType.CastOnGround, defile, req => Spell.UseAoe && (blood == 2 || frost == 2),
                         on => Me.CurrentTarget),
                     //actions.single_target+=/plague_strike,if=!disease.min_ticking&(blood=2|frost=2)
-                    new Spell(SpellType.Buff, plague_strike,
+                    new Spell(SpellType.Cast, plague_strike,
                         req => !disease.min_ticking && (blood == 2 || frost == 2)),
                     //actions.single_target+=/scourge_strike,if=blood=2|frost=2
                     new Spell(SpellType.Cast, scourge_strike, req => blood == 2 || frost == 2),
@@ -243,7 +244,7 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
                     //actions.single_target+=/blood_tap,if=cooldown.defile.remains=0
                     new Spell(SpellType.Cast, blood_tap, req => cooldown.defile_remains == 0),
                     //actions.single_target+=/plague_strike,if=!disease.min_ticking
-                    new Spell(SpellType.Buff, plague_strike, req => !disease.ticking),
+                    new Spell(SpellType.Cast, plague_strike, req => !disease.ticking),
                     //actions.single_target+=/dark_transformation
                     new Spell(SpellType.Buff, dark_transformation, on => Me.Pet),
                     //actions.single_target+=/blood_tap,if=buff.blood_charge.stack>10&(buff.sudden_doom.react|(buff.dark_transformation.down&unholy<=1))
@@ -298,9 +299,9 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
                             Spell.UseAoe && disease.min_ticking &&
                             active_enemies_list.Count(u => !disease.ticking_on(u)) > 0),
                     //actions.spread+=/outbreak,if=!disease.min_ticking
-                    new Spell(SpellType.Buff, outbreak, req => !disease.min_ticking),
+                    new Spell(SpellType.Cast, outbreak, req => !disease.min_ticking),
                     //actions.spread+=/plague_strike,if=!disease.min_ticking
-                    new Spell(SpellType.Buff, plague_strike, req => !disease.min_ticking)
+                    new Spell(SpellType.Cast, plague_strike, req => !disease.min_ticking)
                 };
             }
         }
