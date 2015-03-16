@@ -4,7 +4,7 @@ using Styx.WoWInternals;
 
 namespace SimcBasedCoRo.Managers
 {
-    public class HotkeyManager
+    public static class HotkeysManager
     {
         #region Fields
 
@@ -19,7 +19,7 @@ namespace SimcBasedCoRo.Managers
             if (_keysRegistered)
                 return;
 
-            HotkeysManager.Register("AoeOn", Keys.A, ModifierKeys.Control, ret =>
+            Styx.Common.HotkeysManager.Register("AoeOn", Keys.A, ModifierKeys.Control, ret =>
             {
                 SimCraftCombatRoutine.UseAoe = !SimCraftCombatRoutine.UseAoe;
                 Lua.DoString(SimCraftCombatRoutine.UseAoe ? "print('AoE Mode: Enabled!')" : @"print('AoE Mode: Disabled!')");
@@ -33,7 +33,7 @@ namespace SimcBasedCoRo.Managers
             if (!_keysRegistered)
                 return;
 
-            HotkeysManager.Unregister("AoeOn");
+            Styx.Common.HotkeysManager.Unregister("AoeOn");
 
             _keysRegistered = false;
         }

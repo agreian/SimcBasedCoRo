@@ -2,6 +2,7 @@
 using System.Linq;
 using SimcBasedCoRo.ClassSpecific.DeathKnight;
 using SimcBasedCoRo.Extensions;
+using SimcBasedCoRo.Managers;
 using SimcBasedCoRo.Utilities;
 using Styx;
 using Styx.Common.Helpers;
@@ -94,6 +95,16 @@ namespace SimcBasedCoRo
                 ActiveEnemies = ObjectManager.ObjectList.OfType<WoWUnit>().Where(u => u != null && u.IsAggressive()).ToArray();
                 _waitForEnemiesCheck.Reset();
             }
+        }
+
+        public override void Initialize()
+        {
+            HotkeysManager.RegisterHotKeys();
+        }
+
+        public override void ShutDown()
+        {
+            HotkeysManager.RemoveHotkeys();
         }
 
         #endregion
