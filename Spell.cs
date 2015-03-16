@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Threading;
+using Bots.DungeonBuddy.Helpers;
 using Styx;
-using Styx.Common;
 using Styx.CommonBot;
-using Styx.TreeSharp;
+using Styx.CommonBot.Coroutines;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 namespace SimcBasedCoRo
@@ -60,25 +62,17 @@ namespace SimcBasedCoRo
 
         public SpellResult Run()
         {
-            Logging.Write("{0} : {1} Start Cast", DateTime.Now, _spellName);
-
-            if (StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling || StyxWoW.Me.IsMoving || StyxWoW.Me.IsDead)
+            if (_requirements != null && !_requirements(null))
                 return SpellResult.Failure;
-
-            if (_requirements != null && !_requirements.Invoke(null))
-            {
-                Logging.Write("{0} : {1} Requirements failure", DateTime.Now, _spellName);
-                return SpellResult.Failure;
-            }
 
             // Cast Spell
             SpellFindResults result;
-            if(!SpellManager.FindSpell(_spellName, out result))
+            if (!SpellManager.FindSpell(_spellName, out result))
                 return SpellResult.Failure;
-            
+
             var spell = result.Override ?? result.Original;
 
-            var target = _target != null ? _target.Invoke(null) : null;
+            var target = _target != null ? _target(null) : null;
 
             switch (_spellType)
             {
@@ -86,32 +80,56 @@ namespace SimcBasedCoRo
                     if (target == null)
                         target = StyxWoW.Me;
 
-                    if(!SpellManager.CanBuff(spell, target))
+                    if (CanStartCasting(spell, target) == SpellResult.Failure)
                         return SpellResult.Failure;
 
-                    return !SpellManager.Buff(spell, target) ? SpellResult.Failure : SpellResult.Success;
+                    if (!SpellManager.CanBuff(spell, target))
+                        return SpellResult.Failure;
+
+                    if (!SpellManager.Buff(spell, target)) return SpellResult.Failure;
+
+                    CommonCoroutines.SleepForLagDuration().Wait();
+
+                    return SpellResult.Success;
 
                 case SpellType.Cast:
                     if (target == null)
                         target = StyxWoW.Me.CurrentTarget;
 
-                    if (!SpellManager.CanCast(spell, target))
+                    if (CanStartCasting(spell, target) == SpellResult.Failure)
                         return SpellResult.Failure;
-
-                    return !SpellManager.Cast(spell, target) ? SpellResult.Failure : SpellResult.Success;
-
-                case SpellType.CastOnGround:
-                    if (target == null)
-                        target = StyxWoW.Me.CurrentTarget;
 
                     if (!SpellManager.CanCast(spell, target))
                         return SpellResult.Failure;
 
                     if (!SpellManager.Cast(spell, target)) return SpellResult.Failure;
 
-                    return !SpellManager.ClickRemoteLocation(target.Location)
-                        ? SpellResult.Failure
-                        : SpellResult.Success;
+                    CommonCoroutines.SleepForLagDuration().Wait();
+
+                    return SpellResult.Success;
+
+                case SpellType.CastOnGround:
+                    if (target == null)
+                        target = StyxWoW.Me.CurrentTarget;
+
+                    if (CanStartCasting(spell, target) == SpellResult.Failure)
+                        return SpellResult.Failure;
+
+                    if (!SpellManager.CanCast(spell, target))
+                        return SpellResult.Failure;
+
+                    SpellManager.Cast(spell, target);
+
+                    //Coroutine.Wait(Convert.ToInt32(SimCraftCombatRoutine.Latency * 5), () => StyxWoW.Me.CurrentPendingCursorSpell != null).Wait();
+                    while (StyxWoW.Me.CurrentPendingCursorSpell == null)
+                        Thread.Sleep(10);
+
+                    if (!SpellManager.ClickRemoteLocation(target.Location))
+                        return SpellResult.Failure;
+
+                    CommonCoroutines.SleepForLagDuration().Wait();
+
+                    return SpellResult.Success;
             }
 
             return SpellResult.Failure;
@@ -120,6 +138,38 @@ namespace SimcBasedCoRo
         #endregion
 
         #region Public Methods
+
+        public static SpellResult CanStartCasting(WoWSpell spell = null, WoWUnit target = null)
+        {
+            if (StyxWoW.Me.IsDead)
+                return SpellResult.Failure;
+
+            if (StyxWoW.Me.IsMelee())
+            {
+                if (!StyxWoW.Me.CurrentTarget.IsWithinMeleeRange)
+                    return SpellResult.Failure;
+            }
+
+            if (spell != null && target != null && spell.HasRange)
+            {
+                if (target.Distance < spell.MinRange)
+                    return SpellResult.Failure;
+
+                if (target.Distance >= spell.MaxRange)
+                    return SpellResult.Failure;
+            }
+
+            if (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds > SimCraftCombatRoutine.Latency)
+                return SpellResult.Failure;
+
+            if (StyxWoW.Me.CurrentChannelTimeLeft.TotalMilliseconds > SimCraftCombatRoutine.Latency)
+                return SpellResult.Failure;
+
+            if (SpellManager.GlobalCooldownLeft.TotalMilliseconds > SimCraftCombatRoutine.Latency)
+                return SpellResult.Failure;
+
+            return SpellResult.Success;
+        }
 
         public static TimeSpan GetSpellCooldown(string spell)
         {

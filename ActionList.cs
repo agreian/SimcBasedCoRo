@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
-using Styx;
+using SimcBasedCoRo.ClassSpecific.DeathKnight;
+using Styx.Common;
 
 namespace SimcBasedCoRo
 {
@@ -30,10 +31,10 @@ namespace SimcBasedCoRo
 
         public SpellResult Run()
         {
-            if (StyxWoW.Me.IsCasting || StyxWoW.Me.IsChanneling || StyxWoW.Me.IsMoving || StyxWoW.Me.IsDead)
+            if(Spell.CanStartCasting() == SpellResult.Failure)
                 return SpellResult.Failure;
 
-            if (_requirements != null && !_requirements.Invoke(null))
+            if (_requirements != null && !_requirements(null))
                 return SpellResult.Failure;
 
             // ReSharper disable once LoopCanBeConvertedToQuery

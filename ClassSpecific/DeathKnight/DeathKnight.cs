@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Styx;
+using Styx.Common;
 using Styx.WoWInternals.WoWObjects;
 
 namespace SimcBasedCoRo.ClassSpecific.DeathKnight
@@ -20,7 +21,8 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
         public const string bone_shield = "Bone Shield";
         public const string breath_of_sindragosa = "Breath of Sindragosa";
         public const string conversion = "Conversion";
-        public const string crimson_sourge = "Crimson Scourge";
+        public const int crimson_scourge = 81141;
+        //public const string crimson_scourge = "Crimson Scourge";
         public const string dancing_rune_weapon = "Dancing Rune Weapon";
         public const string dark_transformation = "Dark Transformation";
         public const string death_and_decay = "Death and Decay";
@@ -28,11 +30,13 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
         public const string defile = "Defile";
         public const string empower_rune_weapon = "Empower Rune Weapon";
         public const string festering_strike = "Festering Strike";
-        public const string freezing_fog = "Freezing Fog";
+        public const int freezing_fog = 59052;
+        //public const string freezing_fog = "Freezing Fog";
         public const string frost_fever = "Frost Fever";
         public const string icebound_fortitude = "Icebound Fortitude";
         public const string icy_touch = "Icy Touch";
-        public const string killing_machine = "Killing Machine";
+        public const int killing_machine = 51124;
+        //public const string killing_machine = "Killing Machine";
         public const string lichborne = "Lichborne";
         public const string necrotic_plague = "Necrotic Plague";
         public const string outbreak = "Outbreak";
@@ -44,7 +48,8 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
         public const string scourge_strike = "Scourge Strike";
         public const string shadow_infusion = "Shadow Infusion";
         public const string soul_reaper = "Soul Reaper";
-        public const string sudden_doom = "Sudden Doom";
+        public const int sudden_doom = 81340;
+        //public const string sudden_doom = "Sudden Doom";
         public const string summon_gargoyle = "Summon Gargoyle";
         public const string unholy_blight = "Unholy Blight";
         public const string vampiric_blood = "Vampiric Blood";
@@ -129,7 +134,7 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
                     //actions.aoe+=/blood_tap
                     new Spell(SpellType.Cast, blood_tap),
                     //actions.aoe+=/plague_leech
-                    new Spell(SpellType.Cast, plague_leech),
+                    new Spell(SpellType.Cast, plague_leech, req => disease.min_ticking),
                     //actions.aoe+=/empower_rune_weapon
                     new Spell(SpellType.Cast, empower_rune_weapon)
                 };
@@ -145,15 +150,15 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
                     //actions.single_target=plague_leech,if=(cooldown.outbreak.remains<1)&((blood<1&frost<1)|(blood<1&unholy<1)|(frost<1&unholy<1))
                     new Spell(SpellType.Cast, plague_leech,
                         req =>
-                            (cooldown.outbreak_remains < 1) &&
+                            (cooldown.outbreak_remains < 1) && disease.min_ticking &&
                             ((blood < 1 && frost < 1) || (blood < 1 && unholy < 1) || (frost < 1 && unholy < 1))),
                     //actions.single_target+=/plague_leech,if=((blood<1&frost<1)|(blood<1&unholy<1)|(frost<1&unholy<1))&disease.min_remains<3
                     new Spell(SpellType.Cast, plague_leech,
                         req =>
                             ((blood < 1 && frost < 1) || (blood < 1 && unholy < 1) || (frost < 1 && unholy < 1)) &&
-                            disease.min_remains < 3),
+                            disease.min_ticking && disease.min_remains < 3),
                     //actions.single_target+=/plague_leech,if=disease.min_remains<1
-                    new Spell(SpellType.Cast, plague_leech, req => disease.min_remains < 1),
+                    new Spell(SpellType.Cast, plague_leech, req => disease.min_ticking && disease.min_remains < 1),
                     //actions.single_target+=/outbreak,if=!disease.min_ticking
                     new Spell(SpellType.Cast, outbreak, req => !disease.min_ticking),
                     //actions.single_target+=/unholy_blight,if=!talent.necrotic_plague.enabled&disease.min_remains<3
@@ -247,8 +252,7 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
                             buff.blood_charge_stack > 10 &&
                             (buff.sudden_doom_react || (buff.dark_transformation_down && unholy <= 1))),
                     //actions.single_target+=/death_coil,if=buff.sudden_doom.react|(buff.dark_transformation.down&unholy<=1)
-                    new Spell(SpellType.Cast, death_coil,
-                        req => buff.sudden_doom_react || (buff.dark_transformation_down && unholy <= 1)),
+                    new Spell(SpellType.Cast, death_coil, req => buff.sudden_doom_react || (buff.dark_transformation_down && unholy <= 1)),
                     //actions.single_target+=/scourge_strike,if=!((target.health.pct-3*(target.health.pct%target.time_to_die))<=45)|(Unholy>=2)
                     new Spell(SpellType.Cast, scourge_strike,
                         req => !(target.health_pct <= 46) || (unholy >= 2)),
@@ -262,7 +266,7 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
                     //actions.single_target+=/death_coil
                     new Spell(SpellType.Cast, death_coil),
                     //actions.single_target+=/plague_leech
-                    new Spell(SpellType.Cast, plague_leech),
+                    new Spell(SpellType.Cast, plague_leech, req => disease.min_ticking),
                     //actions.single_target+=/scourge_strike,if=cooldown.empower_rune_weapon.remains=0
                     new Spell(SpellType.Cast, scourge_strike,
                         req => cooldown.empower_rune_weapon_remains == 0),
@@ -328,6 +332,41 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
 
         #endregion
     }
+
+    // ReSharper disable UnusedMember.Global
+
+    public enum DeathKnightTalents
+    {
+        Plaguebearer = 1,
+        PlagueLeech,
+        UnholyBlight,
+
+        Lichborne,
+        AntiMagicZone,
+        Purgatory,
+
+        DeathsAdvance,
+        Chilblains,
+        Asphyxiate,
+
+        BloodTap,
+        RunicEmpowerment,
+        RunicCorruption,
+
+        DeathPact,
+        DeathSiphon,
+        Conversion,
+
+        GorefiendsGrasp,
+        RemorselessWinter,
+        DesecratedGround,
+
+        NecroticPlague,
+        Defile,
+        BreathOfSindragosa
+    }
+
+    // ReSharper restore UnusedMember.Global
 
     // ReSharper restore InconsistentNaming
 }

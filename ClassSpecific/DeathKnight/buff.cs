@@ -1,4 +1,5 @@
 ﻿using Styx;
+using Styx.Common;
 
 namespace SimcBasedCoRo.ClassSpecific.DeathKnight
 {
@@ -13,7 +14,7 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
 
         public static bool crimson_scourge_react
         {
-            get { return React(DeathKnight.crimson_sourge); }
+            get { return React(DeathKnight.crimson_scourge); }
         }
 
         public static bool dark_transformation_down
@@ -55,7 +56,7 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
             return StyxWoW.Me.GotAlivePet && StyxWoW.Me.Pet.ActiveAuras.ContainsKey(aura);
         }
 
-        private static bool React(string aura)
+        private static bool React(int aura)
         {
             return StyxWoW.Me.HasAura(aura);
         }
