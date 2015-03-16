@@ -4,7 +4,7 @@
     {
         #region Public Methods
 
-        SpellResult Run();
+        SpellResultEnum Run();
 
         #endregion
     }

@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Linq;
 using SimcBasedCoRo.ClassSpecific.DeathKnight;
+using SimcBasedCoRo.Extensions;
 using SimcBasedCoRo.Utilities;
 using Styx;
 using Styx.Common.Helpers;
 using Styx.CommonBot.Routines;
+using Styx.WoWInternals;
+using Styx.WoWInternals.WoWObjects;
 
 namespace SimcBasedCoRo
 {
@@ -14,6 +18,8 @@ namespace SimcBasedCoRo
         #region Fields
 
         private static readonly WaitTimer _waitForLatencyCheck = new WaitTimer(TimeSpan.FromSeconds(5));
+        private static readonly WaitTimer _waitForEnemiesCheck = new WaitTimer(TimeSpan.FromMilliseconds(500));
+
         private ActionList _currentActionList;
         private WoWSpec _specialization;
 
@@ -22,6 +28,7 @@ namespace SimcBasedCoRo
         #region Properties
 
         public static uint Latency { get; private set; }
+        public static WoWUnit[] ActiveEnemies { get; private set; }
 
         public override WoWClass Class
         {
@@ -69,6 +76,12 @@ namespace SimcBasedCoRo
             {
                 Latency = StyxWoW.WoWClient.Latency;
                 _waitForLatencyCheck.Reset();
+            }
+
+            if (_waitForEnemiesCheck.IsFinished)
+            {
+                ActiveEnemies = ObjectManager.ObjectList.OfType<WoWUnit>().Where(u => u != null && u.IsAggressive()).ToArray();
+                _waitForEnemiesCheck.Reset();
             }
         }
 

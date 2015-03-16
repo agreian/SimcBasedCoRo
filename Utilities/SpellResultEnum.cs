@@ -1,6 +1,6 @@
 ﻿namespace SimcBasedCoRo.Utilities
 {
-    public enum SpellResult
+    public enum SpellResultEnum
     {
         Success,
         Failure

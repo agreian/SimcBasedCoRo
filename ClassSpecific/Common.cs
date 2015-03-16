@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using SimcBasedCoRo.Extensions;
 using SimcBasedCoRo.Managers;
 using Styx;
-using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 namespace SimcBasedCoRo.ClassSpecific
@@ -40,9 +38,7 @@ namespace SimcBasedCoRo.ClassSpecific
                         break;
                 }
 
-                return
-                    ObjectManager.ObjectList.OfType<WoWUnit>()
-                        .Where(u => u != null && u.IsAggressive() && u.Distance < distance);
+                return SimCraftCombatRoutine.ActiveEnemies.Where(u => u.Distance < distance);
             }
         }
 

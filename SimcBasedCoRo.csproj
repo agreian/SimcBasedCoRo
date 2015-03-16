@@ -68,9 +68,10 @@
     <Compile Include="SimCraftCombatRoutine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Utilities\Spell.cs" />
-    <Compile Include="Utilities\SpellResult.cs" />
+    <Compile Include="Utilities\SpellResultEnum.cs" />
     <Compile Include="Managers\TalentManager.cs" />
     <Compile Include="Extensions\UnitExtension.cs" />
+    <Compile Include="Utilities\SpellTypeEnum.cs" />
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using Bots.DungeonBuddy.Helpers;
+using SimcBasedCoRo.ClassSpecific.DeathKnight;
 using Styx;
 using Styx.CommonBot;
 using Styx.CommonBot.Coroutines;
@@ -11,37 +12,47 @@ namespace SimcBasedCoRo.Utilities
 {
     public class Spell : ISpellRun
     {
-        #region Delegates
-
-        public delegate bool SimpleBooleanDelegate(object lol);
-
-        public delegate WoWUnit UnitSelectionDelegate(object lol);
-
-        #endregion
-
         #region Fields
 
-        private readonly SimpleBooleanDelegate _requirements;
+        private readonly Func<bool> _requirements;
         private readonly string _spellName;
-        private readonly SpellType _spellType;
-        private readonly UnitSelectionDelegate _target;
+        private readonly SpellTypeEnum _spellTypeEnum;
+        private readonly Func<WoWUnit> _target;
 
         #endregion
 
         #region Constructors
 
-        public Spell(SpellType spellType, string spellName, UnitSelectionDelegate target)
-            : this(spellType, spellName, null, target)
+        public Spell(string spellName, Func<bool> requirements = null, Func<WoWUnit> target = null)
+            : this(SpellTypeEnum.Cast, spellName, requirements, target)
+        {
+            switch (StyxWoW.Me.Class)
+            {
+                case WoWClass.DeathKnight:
+                    _spellTypeEnum = DeathKnight.Spells[spellName];
+                    break;
+                default:
+                    throw new ArgumentException();
+            }
+        }
+
+        public Spell(string spellName, Func<WoWUnit> target)
+            : this(spellName, null, target)
         {
         }
 
-        public Spell(SpellType spellType, string spellName, SimpleBooleanDelegate requirements = null,
-            UnitSelectionDelegate target = null)
+        public Spell(SpellTypeEnum spellTypeEnum, string spellName, Func<WoWUnit> target)
+            : this(spellTypeEnum, spellName, null, target)
+        {
+        }
+
+        public Spell(SpellTypeEnum spellTypeEnum, string spellName, Func<bool> requirements = null,
+            Func<WoWUnit> target = null)
         {
             if (string.IsNullOrWhiteSpace(spellName))
                 throw new ArgumentException("spellName");
 
-            _spellType = spellType;
+            _spellTypeEnum = spellTypeEnum;
             _spellName = spellName;
             _requirements = requirements;
             _target = target;
@@ -60,115 +71,77 @@ namespace SimcBasedCoRo.Utilities
 
         #region ISpellRun Members
 
-        public SpellResult Run()
+        public SpellResultEnum Run()
         {
-            if (_requirements != null && !_requirements(null))
-                return SpellResult.Failure;
+            if (_requirements != null && !_requirements())
+                return SpellResultEnum.Failure;
 
-            // Cast Spell
             SpellFindResults result;
             if (!SpellManager.FindSpell(_spellName, out result))
-                return SpellResult.Failure;
+                return SpellResultEnum.Failure;
 
             var spell = result.Override ?? result.Original;
 
-            var target = _target != null ? _target(null) : null;
+            if (!StyxWoW.Me.KnowsSpell(spell.Id))
+                return SpellResultEnum.Failure;
 
-            switch (_spellType)
+            var target = _target != null ? _target() : null;
+
+            switch (_spellTypeEnum)
             {
-                case SpellType.Buff:
-                    if (target == null)
-                        target = StyxWoW.Me;
+                case SpellTypeEnum.Buff:
+                    return Buff(target, spell);
 
-                    if (CanStartCasting(spell, target) == SpellResult.Failure)
-                        return SpellResult.Failure;
+                case SpellTypeEnum.Cast:
+                    return Cast(target, spell);
 
-                    if (!SpellManager.CanBuff(spell, target))
-                        return SpellResult.Failure;
+                case SpellTypeEnum.CastAoe:
+                    return !UseAoe ? SpellResultEnum.Failure : Cast(target, spell);
 
-                    if (!SpellManager.Buff(spell, target)) return SpellResult.Failure;
+                case SpellTypeEnum.CastOnGround:
+                    return CastOnGround(target, spell);
 
-                    CommonCoroutines.SleepForLagDuration().Wait();
-
-                    return SpellResult.Success;
-
-                case SpellType.Cast:
-                    if (target == null)
-                        target = StyxWoW.Me.CurrentTarget;
-
-                    if (CanStartCasting(spell, target) == SpellResult.Failure)
-                        return SpellResult.Failure;
-
-                    if (!SpellManager.CanCast(spell, target))
-                        return SpellResult.Failure;
-
-                    if (!SpellManager.Cast(spell, target)) return SpellResult.Failure;
-
-                    CommonCoroutines.SleepForLagDuration().Wait();
-
-                    return SpellResult.Success;
-
-                case SpellType.CastOnGround:
-                    if (target == null)
-                        target = StyxWoW.Me.CurrentTarget;
-
-                    if (CanStartCasting(spell, target) == SpellResult.Failure)
-                        return SpellResult.Failure;
-
-                    if (!SpellManager.CanCast(spell, target))
-                        return SpellResult.Failure;
-
-                    SpellManager.Cast(spell, target);
-
-                    //Coroutine.Wait(Convert.ToInt32(SimCraftCombatRoutine.Latency * 5), () => StyxWoW.Me.CurrentPendingCursorSpell != null).Wait();
-                    while (StyxWoW.Me.CurrentPendingCursorSpell == null)
-                        Thread.Sleep(10);
-
-                    if (!SpellManager.ClickRemoteLocation(target.Location))
-                        return SpellResult.Failure;
-
-                    CommonCoroutines.SleepForLagDuration().Wait();
-
-                    return SpellResult.Success;
+                case SpellTypeEnum.CastOnGroundAoe:
+                    return !UseAoe ? SpellResultEnum.Failure : CastOnGround(target, spell);
             }
 
-            return SpellResult.Failure;
+            return SpellResultEnum.Failure;
         }
 
         #endregion
 
         #region Public Methods
 
-        public static SpellResult CanStartCasting(WoWSpell spell = null, WoWUnit target = null)
+        public static SpellResultEnum CanStartCasting(WoWSpell spell = null, WoWUnit target = null)
         {
             if (StyxWoW.Me.IsDead)
-                return SpellResult.Failure;
+                return SpellResultEnum.Failure;
 
             if (StyxWoW.Me.IsMelee())
             {
                 if (!StyxWoW.Me.CurrentTarget.IsWithinMeleeRange)
-                    return SpellResult.Failure;
+                    return SpellResultEnum.Failure;
             }
 
             if (spell != null && target != null && spell.HasRange)
             {
                 if (target.Distance < spell.MinRange)
-                    return SpellResult.Failure;
+                    return SpellResultEnum.Failure;
 
                 if (target.Distance >= spell.MaxRange)
-                    return SpellResult.Failure;
+                    return SpellResultEnum.Failure;
             }
 
             if (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds > SimCraftCombatRoutine.Latency)
-                return SpellResult.Failure;
+                return SpellResultEnum.Failure;
 
             if (StyxWoW.Me.CurrentChannelTimeLeft.TotalMilliseconds > SimCraftCombatRoutine.Latency)
-                return SpellResult.Failure;
+                return SpellResultEnum.Failure;
 
             if (SpellManager.GlobalCooldownLeft.TotalMilliseconds > SimCraftCombatRoutine.Latency)
-                return SpellResult.Failure;
+                return SpellResultEnum.Failure;
 
-            return SpellResult.Success;
+            return SpellResultEnum.Success;
         }
 
         public static TimeSpan GetSpellCooldown(string spell)
@@ -181,12 +154,70 @@ namespace SimcBasedCoRo.Utilities
         }
 
         #endregion
-    }
 
-    public enum SpellType
-    {
-        Cast,
-        CastOnGround,
-        Buff
+        #region Private Methods
+
+        private static SpellResultEnum Buff(WoWUnit target, WoWSpell spell)
+        {
+            if (target == null)
+                target = StyxWoW.Me;
+
+            if (CanStartCasting(spell, target) == SpellResultEnum.Failure)
+                return SpellResultEnum.Failure;
+
+            if (!SpellManager.CanBuff(spell, target))
+                return SpellResultEnum.Failure;
+
+            if (!SpellManager.Buff(spell, target)) return SpellResultEnum.Failure;
+
+            CommonCoroutines.SleepForLagDuration().Wait();
+
+            return SpellResultEnum.Success;
+        }
+
+        private static SpellResultEnum Cast(WoWUnit target, WoWSpell spell)
+        {
+            if (target == null)
+                target = StyxWoW.Me.CurrentTarget;
+
+            if (CanStartCasting(spell, target) == SpellResultEnum.Failure)
+                return SpellResultEnum.Failure;
+
+            if (!SpellManager.CanCast(spell, target))
+                return SpellResultEnum.Failure;
+
+            if (!SpellManager.Cast(spell, target)) return SpellResultEnum.Failure;
+
+            CommonCoroutines.SleepForLagDuration().Wait();
+
+            return SpellResultEnum.Success;
+        }
+
+        private static SpellResultEnum CastOnGround(WoWUnit target, WoWSpell spell)
+        {
+            if (target == null)
+                target = StyxWoW.Me.CurrentTarget;
+
+            if (CanStartCasting(spell, target) == SpellResultEnum.Failure)
+                return SpellResultEnum.Failure;
+
+            if (!SpellManager.CanCast(spell, target))
+                return SpellResultEnum.Failure;
+
+            SpellManager.Cast(spell, target);
+
+            //Coroutine.Wait(Convert.ToInt32(SimCraftCombatRoutine.Latency * 5), () => StyxWoW.Me.CurrentPendingCursorSpell != null).Wait();
+            while (StyxWoW.Me.CurrentPendingCursorSpell == null)
+                Thread.Sleep(10);
+
+            if (!SpellManager.ClickRemoteLocation(target.Location))
+                return SpellResultEnum.Failure;
+
+            CommonCoroutines.SleepForLagDuration().Wait();
+
+            return SpellResultEnum.Success;
+        }
+
+        #endregion
     }
 }

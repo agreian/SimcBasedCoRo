@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace SimcBasedCoRo.Utilities
 {
@@ -6,7 +7,7 @@ namespace SimcBasedCoRo.Utilities
     {
         #region Fields
 
-        private readonly Spell.SimpleBooleanDelegate _requirements;
+        private readonly Func<bool> _requirements;
 
         #endregion
 
@@ -16,7 +17,12 @@ namespace SimcBasedCoRo.Utilities
         {
         }
 
-        public ActionList(Spell.SimpleBooleanDelegate requirements, ISpellRun spellRun)
+        private ActionList(IEnumerable<ISpellRun> spells)
+            : base(spells)
+        {
+        }
+
+        public ActionList(ISpellRun spellRun, Func<bool> requirements)
             : this()
         {
             _requirements = requirements;
@@ -27,22 +33,33 @@ namespace SimcBasedCoRo.Utilities
 
         #region ISpellRun Members
 
-        public SpellResult Run()
+        public SpellResultEnum Run()
         {
-            if(Spell.CanStartCasting() == SpellResult.Failure)
-                return SpellResult.Failure;
+            if (Spell.CanStartCasting() == SpellResultEnum.Failure)
+                return SpellResultEnum.Failure;
 
-            if (_requirements != null && !_requirements(null))
-                return SpellResult.Failure;
+            if (_requirements != null && !_requirements())
+                return SpellResultEnum.Failure;
 
             // ReSharper disable once LoopCanBeConvertedToQuery
             foreach (var spellRun in AsReadOnly())
             {
-                if (spellRun.Run() == SpellResult.Success)
-                    return SpellResult.Success;
+                if (spellRun.Run() == SpellResultEnum.Success)
+                    return SpellResultEnum.Success;
             }
 
-            return SpellResult.Failure;
+            return SpellResultEnum.Failure;
+        }
+
+        #endregion
+
+        #region Public Methods
+
+        public static ActionList operator +(ActionList a, ISpellRun spellRun)
+        {
+            var actionList = new ActionList(a) { spellRun };
+
+            return actionList;
         }
 
         #endregion
