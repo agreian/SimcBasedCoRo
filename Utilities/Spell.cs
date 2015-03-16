@@ -60,15 +60,6 @@ namespace SimcBasedCoRo.Utilities
 
         #endregion
 
-        #region Properties
-
-        public static bool UseAoe
-        {
-            get { return true; }
-        }
-
-        #endregion
-
         #region ISpellRun Members
 
         public SpellResultEnum Run()
@@ -96,13 +87,13 @@ namespace SimcBasedCoRo.Utilities
                     return Cast(target, spell);
 
                 case SpellTypeEnum.CastAoe:
-                    return !UseAoe ? SpellResultEnum.Failure : Cast(target, spell);
+                    return !SimCraftCombatRoutine.UseAoe ? SpellResultEnum.Failure : Cast(target, spell);
 
                 case SpellTypeEnum.CastOnGround:
                     return CastOnGround(target, spell);
 
                 case SpellTypeEnum.CastOnGroundAoe:
-                    return !UseAoe ? SpellResultEnum.Failure : CastOnGround(target, spell);
+                    return !SimCraftCombatRoutine.UseAoe ? SpellResultEnum.Failure : CastOnGround(target, spell);
             }
 
             return SpellResultEnum.Failure;

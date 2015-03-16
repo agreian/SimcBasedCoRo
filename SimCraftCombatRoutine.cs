@@ -19,6 +19,7 @@ namespace SimcBasedCoRo
 
         private static readonly WaitTimer _waitForLatencyCheck = new WaitTimer(TimeSpan.FromSeconds(5));
         private static readonly WaitTimer _waitForEnemiesCheck = new WaitTimer(TimeSpan.FromMilliseconds(500));
+        private static bool _useAoe = true;
 
         private ActionList _currentActionList;
         private WoWSpec _specialization;
@@ -29,6 +30,16 @@ namespace SimcBasedCoRo
 
         public static uint Latency { get; private set; }
         public static WoWUnit[] ActiveEnemies { get; private set; }
+
+        #region Properties
+
+        public static bool UseAoe
+        {
+            get { return _useAoe; }
+            set { _useAoe = value; }
+        }
+
+        #endregion
 
         public override WoWClass Class
         {
