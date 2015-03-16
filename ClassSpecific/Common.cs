@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using SimcBasedCoRo.Extensions;
 using SimcBasedCoRo.Managers;
 using Styx;
 using Styx.WoWInternals.WoWObjects;
@@ -31,7 +33,7 @@ namespace SimcBasedCoRo.ClassSpecific
                 switch (StyxWoW.Me.Specialization)
                 {
                     case WoWSpec.DeathKnightUnholy:
-                        distance = TalentManager.HasGlyph(DeathKnight.DeathKnight.blood_boil) ? 15 : 10;
+                        distance = TalentManager.HasGlyph(DeathKnight.blood_boil) ? 15 : 10;
                         break;
                     case WoWSpec.DeathKnightBlood:
                         distance = 20;
@@ -45,6 +47,37 @@ namespace SimcBasedCoRo.ClassSpecific
         protected static double health_pct
         {
             get { return Me.HealthPercent; }
+        }
+
+        protected static double mana_pct
+        {
+            get { return Me.ManaPercent; }
+        }
+
+        protected static double spell_haste
+        {
+            get { throw new NotImplementedException(); }
+        }
+
+        #endregion
+
+        #region Types
+
+        protected static class target
+        {
+            #region Properties
+
+            public static double health_pct
+            {
+                get { return StyxWoW.Me.CurrentTarget.HealthPercent; }
+            }
+
+            public static long time_to_die
+            {
+                get { return StyxWoW.Me.CurrentTarget.TimeToDeath(); }
+            }
+
+            #endregion
         }
 
         #endregion

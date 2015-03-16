@@ -22,7 +22,7 @@ namespace SimcBasedCoRo.Utilities
         {
         }
 
-        public ActionList(ISpellRun spellRun, Func<bool> requirements)
+        public ActionList(ISpellRun spellRun, Func<bool> requirements = null)
             : this()
         {
             _requirements = requirements;

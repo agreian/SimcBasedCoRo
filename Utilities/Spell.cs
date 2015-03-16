@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 using Bots.DungeonBuddy.Helpers;
-using SimcBasedCoRo.ClassSpecific.DeathKnight;
+using SimcBasedCoRo.ClassSpecific;
 using Styx;
 using Styx.CommonBot;
 using Styx.CommonBot.Coroutines;
@@ -133,6 +133,28 @@ namespace SimcBasedCoRo.Utilities
                 return SpellResultEnum.Failure;
 
             return SpellResultEnum.Success;
+        }
+
+        public static TimeSpan GetSpellCastTime(string s)
+        {
+            SpellFindResults sfr;
+            if (SpellManager.FindSpell(s, out sfr))
+            {
+                var spell = sfr.Override ?? sfr.Original;
+                return GetSpellCastTime(spell);
+            }
+
+            return TimeSpan.Zero;
+        }
+
+        private static TimeSpan GetSpellCastTime(WoWSpell spell)
+        {
+            if (spell == null) return TimeSpan.Zero;
+
+            var time = (int)spell.CastTime;
+            if (time == 0)
+                time = spell.BaseDuration;
+            return TimeSpan.FromMilliseconds(time);
         }
 
         public static TimeSpan GetSpellCooldown(string spell)

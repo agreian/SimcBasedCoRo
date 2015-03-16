@@ -6,10 +6,11 @@ using SimcBasedCoRo.Utilities;
 using Styx;
 using Styx.WoWInternals.WoWObjects;
 
-namespace SimcBasedCoRo.ClassSpecific.DeathKnight
+namespace SimcBasedCoRo.ClassSpecific
 {
     // ReSharper disable InconsistentNaming
-    public abstract class DeathKnight : Common
+    // ReSharper disable once ClassNeverInstantiated.Global
+    public class DeathKnight : Common
     {
         #region Constant
 
@@ -457,42 +458,51 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
 
             public static double antimagic_shell_remains
             {
-                get { return Spell.GetSpellCooldown(antimagic_shell).TotalSeconds; }
+                get { return Remains(antimagic_shell); }
             }
 
             public static double breath_of_sindragosa_remains
             {
-                get { return Spell.GetSpellCooldown(breath_of_sindragosa).TotalSeconds; }
+                get { return Remains(breath_of_sindragosa); }
             }
 
             public static double defile_remains
             {
-                get { return Spell.GetSpellCooldown(defile).TotalSeconds; }
+                get { return Remains(defile); }
             }
 
             public static double empower_rune_weapon_remains
             {
-                get { return Spell.GetSpellCooldown(empower_rune_weapon).TotalSeconds; }
+                get { return Remains(empower_rune_weapon); }
             }
 
             public static double outbreak_remains
             {
-                get { return Spell.GetSpellCooldown(outbreak).TotalSeconds; }
+                get { return Remains(outbreak); }
             }
 
             public static double pillar_of_frost_remains
             {
-                get { return Spell.GetSpellCooldown(pillar_of_frost).TotalSeconds; }
+                get { return Remains(pillar_of_frost); }
             }
 
             public static double soul_reaper_remains
             {
-                get { return Spell.GetSpellCooldown(soul_reaper).TotalSeconds; }
+                get { return Remains(soul_reaper); }
             }
 
             public static double unholy_blight_remains
             {
-                get { return Spell.GetSpellCooldown(unholy_blight).TotalSeconds; }
+                get { return Remains(unholy_blight); }
+            }
+
+            #endregion
+
+            #region Private Methods
+
+            private static double Remains(string spell)
+            {
+                return Spell.GetSpellCooldown(spell).TotalSeconds;
             }
 
             #endregion
@@ -705,23 +715,6 @@ namespace SimcBasedCoRo.ClassSpecific.DeathKnight
             private static bool HasTalent(DeathKnightTalentsEnum tal)
             {
                 return TalentManager.IsSelected((int) tal);
-            }
-
-            #endregion
-        }
-
-        private static class target
-        {
-            #region Properties
-
-            public static double health_pct
-            {
-                get { return StyxWoW.Me.CurrentTarget.HealthPercent; }
-            }
-
-            public static long time_to_die
-            {
-                get { return StyxWoW.Me.CurrentTarget.TimeToDeath(); }
             }
 
             #endregion

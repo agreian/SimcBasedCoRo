@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Linq;
-using SimcBasedCoRo.ClassSpecific.DeathKnight;
+using SimcBasedCoRo.ClassSpecific;
 using SimcBasedCoRo.Extensions;
 using SimcBasedCoRo.Managers;
 using SimcBasedCoRo.Utilities;
@@ -65,6 +65,9 @@ namespace SimcBasedCoRo
                 {
                     case WoWSpec.DeathKnightUnholy:
                         _currentActionList = DeathKnight.UnholyActionList;
+                        break;
+                    case WoWSpec.MageArcane:
+                        _currentActionList = Mage.ArcaneActionList;
                         break;
                 }
             }

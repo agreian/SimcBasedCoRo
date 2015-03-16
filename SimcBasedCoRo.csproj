@@ -63,9 +63,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClassSpecific\Common.cs" />
+    <Compile Include="ClassSpecific\Mage.cs" />
     <Compile Include="Managers\HotkeysManager.cs" />
     <Compile Include="Utilities\ActionList.cs" />
-    <Compile Include="ClassSpecific\DeathKnight\DeathKnight.cs" />
+    <Compile Include="ClassSpecific\DeathKnight.cs" />
     <Compile Include="Utilities\ISpellRun.cs" />
     <Compile Include="SimCraftCombatRoutine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
