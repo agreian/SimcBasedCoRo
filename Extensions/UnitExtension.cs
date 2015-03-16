@@ -1,18 +1,18 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Styx;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
-using System;
-using System.Linq;
 
-namespace SimcBasedCoRo
+namespace SimcBasedCoRo.Extensions
 {
     public static class UnitExtension
     {
         #region Constant
 
-        private const int BannerOfTheAlliance = 61573;
-        private const int BannerOfTheHorde = 61574;
+        private const int BANNER_OF_THE_ALLIANCE = 61573;
+        private const int BANNER_OF_THE_HORDE = 61574;
 
         #endregion
 
@@ -76,17 +76,12 @@ namespace SimcBasedCoRo
             return auras.Any(a => a.CreatorGuid == StyxWoW.Me.Guid && hashes.Contains(a.Name));
         }
 
-        public static IEnumerable<WoWUnit> UnfriendlyUnits(this WoWUnit unit)
-        {
-            return ObjectManager.ObjectList.OfType<WoWUnit>().Where(u => u != null && u.IsAggressive());
-        }
-
         /// <summary>
         /// checks if unit is targeting you, your minions, a group member, or group pets
         /// </summary>
         /// <param name="u">unit</param>
         /// <returns>true if targeting your guys, false if not</returns>
-        private static bool IsAggressive(this WoWUnit u)
+        public static bool IsAggressive(this WoWUnit u)
         {
             return u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingAnyMinion || u.IsTargetingMyPartyMember || u.IsTargetingMyRaidMember);
         }
@@ -197,7 +192,7 @@ namespace SimcBasedCoRo
 
         private static bool IsTrainingDummy(this WoWUnit unit)
         {
-            var bannerId = StyxWoW.Me.IsHorde ? BannerOfTheAlliance : BannerOfTheHorde;
+            var bannerId = StyxWoW.Me.IsHorde ? BANNER_OF_THE_ALLIANCE : BANNER_OF_THE_HORDE;
             return unit != null && unit.Level > 1 &&
                    ((unit.CurrentHealth == 1 && unit.MaxHealth < unit.Level) || unit.HasAura(bannerId) ||
                     unit.Name.Contains("Training Dummy"));

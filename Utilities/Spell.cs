@@ -2,13 +2,12 @@
 using System.Threading;
 using Bots.DungeonBuddy.Helpers;
 using Styx;
-using Styx.Common;
 using Styx.CommonBot;
 using Styx.CommonBot.Coroutines;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
-namespace SimcBasedCoRo
+namespace SimcBasedCoRo.Utilities
 {
     public class Spell : ISpellRun
     {

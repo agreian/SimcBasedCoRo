@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
-using SimcBasedCoRo.ClassSpecific.DeathKnight;
-using Styx.Common;
 
-namespace SimcBasedCoRo
+namespace SimcBasedCoRo.Utilities
 {
     public class ActionList : List<ISpellRun>, ISpellRun
     {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Styx.WoWInternals;
 
-namespace SimcBasedCoRo
+namespace SimcBasedCoRo.Managers
 {
     internal static class TalentManager
     {

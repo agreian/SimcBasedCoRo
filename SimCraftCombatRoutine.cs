@@ -1,14 +1,13 @@
 ﻿using System;
 using SimcBasedCoRo.ClassSpecific.DeathKnight;
+using SimcBasedCoRo.Utilities;
 using Styx;
-using Styx.Common;
 using Styx.Common.Helpers;
 using Styx.CommonBot.Routines;
 
 namespace SimcBasedCoRo
 {
-    // ReSharper disable once UnusedMember.Global
-    // ReSharper disable once ClassNeverInstantiated.Global
+    // ReSharper disable ClassNeverInstantiated.Global
 
     public class SimCraftCombatRoutine : CombatRoutine
     {
@@ -75,4 +74,6 @@ namespace SimcBasedCoRo
 
         #endregion
     }
+
+    // ReSharper restore ClassNeverInstantiated.Global
 }

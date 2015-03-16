@@ -1,4 +1,4 @@
-﻿namespace SimcBasedCoRo
+﻿namespace SimcBasedCoRo.Utilities
 {
     public enum SpellResult
     {
