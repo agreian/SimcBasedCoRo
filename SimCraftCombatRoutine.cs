@@ -2,13 +2,13 @@
 using System.Linq;
 using SimcBasedCoRo.ClassSpecific;
 using SimcBasedCoRo.Extensions;
-using SimcBasedCoRo.Managers;
 using SimcBasedCoRo.Utilities;
 using Styx;
 using Styx.Common.Helpers;
 using Styx.CommonBot.Routines;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
+using HotkeysManager = SimcBasedCoRo.Managers.HotkeysManager;
 
 namespace SimcBasedCoRo
 {

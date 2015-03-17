@@ -555,6 +555,8 @@ namespace SimcBasedCoRo.ClassSpecific
 
             public static bool ticking_on(WoWUnit unit)
             {
+                if (unit == null) return false;
+
                 return unit.HasAllMyAuras(diseaseArray);
             }
 
@@ -564,6 +566,8 @@ namespace SimcBasedCoRo.ClassSpecific
 
             private static double max_remains_on(WoWUnit unit)
             {
+                if (unit == null) return 0;
+
                 var max = double.MinValue;
 
                 // ReSharper disable once LoopCanBeConvertedToQuery
@@ -582,11 +586,15 @@ namespace SimcBasedCoRo.ClassSpecific
 
             private static bool max_ticking_on(WoWUnit unit)
             {
+                if(unit == null) return false;
+
                 return unit.HasAnyOfMyAuras(diseaseArray);
             }
 
             private static double min_remains_on(WoWUnit unit)
             {
+                if (unit == null) return 0;
+
                 var min = double.MaxValue;
 
                 // ReSharper disable once LoopCanBeConvertedToQuery
@@ -656,6 +664,8 @@ namespace SimcBasedCoRo.ClassSpecific
 
             private static double Remains(string aura)
             {
+                if (StyxWoW.Me.CurrentTarget == null) return 0;
+
                 return StyxWoW.Me.CurrentTarget.GetAuraTimeLeft(aura).TotalSeconds;
             }
 

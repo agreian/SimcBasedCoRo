@@ -69,12 +69,22 @@ namespace SimcBasedCoRo.ClassSpecific
 
             public static double health_pct
             {
-                get { return StyxWoW.Me.CurrentTarget.HealthPercent; }
+                get
+                {
+                    if (StyxWoW.Me.CurrentTarget == null) return 100;
+
+                    return StyxWoW.Me.CurrentTarget.HealthPercent;
+                }
             }
 
             public static long time_to_die
             {
-                get { return StyxWoW.Me.CurrentTarget.TimeToDeath(); }
+                get
+                {
+                    if (StyxWoW.Me.CurrentTarget == null) return 0;
+                    
+                    return StyxWoW.Me.CurrentTarget.TimeToDeath();
+                }
             }
 
             #endregion

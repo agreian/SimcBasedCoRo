@@ -31,6 +31,9 @@ namespace SimcBasedCoRo.Utilities
                 case WoWClass.DeathKnight:
                     _spellTypeEnum = DeathKnight.Spells[spellName];
                     break;
+                case WoWClass.Mage:
+                    _spellTypeEnum = Mage.Spells[spellName];
+                    break;
                 default:
                     throw new ArgumentException();
             }
@@ -108,9 +111,9 @@ namespace SimcBasedCoRo.Utilities
             if (StyxWoW.Me.IsDead)
                 return SpellResultEnum.Failure;
 
-            if (StyxWoW.Me.IsMelee())
+            if (spell != null && target != null)
             {
-                if (!StyxWoW.Me.CurrentTarget.IsWithinMeleeRange)
+                if (spell.IsMeleeSpell && !target.IsWithinMeleeRange)
                     return SpellResultEnum.Failure;
             }
 
@@ -123,13 +126,13 @@ namespace SimcBasedCoRo.Utilities
                     return SpellResultEnum.Failure;
             }
 
-            if (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds > SimCraftCombatRoutine.Latency)
+            if (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds >= SimCraftCombatRoutine.Latency)
                 return SpellResultEnum.Failure;
 
-            if (StyxWoW.Me.CurrentChannelTimeLeft.TotalMilliseconds > SimCraftCombatRoutine.Latency)
+            if (StyxWoW.Me.CurrentChannelTimeLeft.TotalMilliseconds >= SimCraftCombatRoutine.Latency)
                 return SpellResultEnum.Failure;
 
-            if (SpellManager.GlobalCooldownLeft.TotalMilliseconds > SimCraftCombatRoutine.Latency)
+            if (SpellManager.GlobalCooldownLeft.TotalMilliseconds >= SimCraftCombatRoutine.Latency)
                 return SpellResultEnum.Failure;
 
             return SpellResultEnum.Success;
@@ -145,16 +148,6 @@ namespace SimcBasedCoRo.Utilities
             }
 
             return TimeSpan.Zero;
-        }
-
-        private static TimeSpan GetSpellCastTime(WoWSpell spell)
-        {
-            if (spell == null) return TimeSpan.Zero;
-
-            var time = (int)spell.CastTime;
-            if (time == 0)
-                time = spell.BaseDuration;
-            return TimeSpan.FromMilliseconds(time);
         }
 
         public static TimeSpan GetSpellCooldown(string spell)
@@ -183,8 +176,6 @@ namespace SimcBasedCoRo.Utilities
 
             if (!SpellManager.Buff(spell, target)) return SpellResultEnum.Failure;
 
-            CommonCoroutines.SleepForLagDuration().Wait();
-
             return SpellResultEnum.Success;
         }
 
@@ -200,8 +191,6 @@ namespace SimcBasedCoRo.Utilities
                 return SpellResultEnum.Failure;
 
             if (!SpellManager.Cast(spell, target)) return SpellResultEnum.Failure;
-
-            CommonCoroutines.SleepForLagDuration().Wait();
 
             return SpellResultEnum.Success;
         }
@@ -226,9 +215,17 @@ namespace SimcBasedCoRo.Utilities
             if (!SpellManager.ClickRemoteLocation(target.Location))
                 return SpellResultEnum.Failure;
 
-            CommonCoroutines.SleepForLagDuration().Wait();
-
             return SpellResultEnum.Success;
+        }
+
+        private static TimeSpan GetSpellCastTime(WoWSpell spell)
+        {
+            if (spell == null) return TimeSpan.Zero;
+
+            var time = (int) spell.CastTime;
+            if (time == 0)
+                time = spell.BaseDuration;
+            return TimeSpan.FromMilliseconds(time);
         }
 
         #endregion

@@ -91,7 +91,7 @@ namespace SimcBasedCoRo.Extensions
                 return 0;
             }
 
-            if (StyxWoW.Me.CurrentTarget.IsTrainingDummy())
+            if (StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget.IsTrainingDummy())
             {
                 return 111; // pick a magic number since training dummies dont die
             }
