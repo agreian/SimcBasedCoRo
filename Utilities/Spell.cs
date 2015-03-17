@@ -63,6 +63,12 @@ namespace SimcBasedCoRo.Utilities
 
         #endregion
 
+        #region Properties
+
+        public static string PreviousGcdSpell { get; private set; }
+
+        #endregion
+
         #region ISpellRun Members
 
         public SpellResultEnum Run()
@@ -176,6 +182,11 @@ namespace SimcBasedCoRo.Utilities
 
             if (!SpellManager.Buff(spell, target)) return SpellResultEnum.Failure;
 
+            if (SimCraftCombatRoutine.Latency < 800)
+                Thread.Sleep(Convert.ToInt32(SimCraftCombatRoutine.Latency + 5));
+
+            if (SpellManager.GlobalCooldown) PreviousGcdSpell = spell.Name;
+
             return SpellResultEnum.Success;
         }
 
@@ -191,6 +202,11 @@ namespace SimcBasedCoRo.Utilities
                 return SpellResultEnum.Failure;
 
             if (!SpellManager.Cast(spell, target)) return SpellResultEnum.Failure;
+
+            if (SimCraftCombatRoutine.Latency < 800)
+                Thread.Sleep(Convert.ToInt32(SimCraftCombatRoutine.Latency + 5));
+
+            if (SpellManager.GlobalCooldown) PreviousGcdSpell = spell.Name;
 
             return SpellResultEnum.Success;
         }
@@ -215,6 +231,11 @@ namespace SimcBasedCoRo.Utilities
             if (!SpellManager.ClickRemoteLocation(target.Location))
                 return SpellResultEnum.Failure;
 
+            if (SimCraftCombatRoutine.Latency < 800)
+                Thread.Sleep(Convert.ToInt32(SimCraftCombatRoutine.Latency + 5));
+
+            if (SpellManager.GlobalCooldown) PreviousGcdSpell = spell.Name;
+
             return SpellResultEnum.Success;
         }
 
@@ -222,7 +243,7 @@ namespace SimcBasedCoRo.Utilities
         {
             if (spell == null) return TimeSpan.Zero;
 
-            var time = (int) spell.CastTime;
+            var time = (int)spell.CastTime;
             if (time == 0)
                 time = spell.BaseDuration;
             return TimeSpan.FromMilliseconds(time);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using SimcBasedCoRo.Extensions;
 using SimcBasedCoRo.Managers;
+using SimcBasedCoRo.Utilities;
 using Styx;
 using Styx.WoWInternals.WoWObjects;
 
@@ -56,7 +57,12 @@ namespace SimcBasedCoRo.ClassSpecific
 
         protected static double spell_haste
         {
-            get { throw new NotImplementedException(); }
+            get { return StyxWoW.Me.SpellHasteModifier; }
+        }
+
+        protected static string prev_gcd
+        {
+            get { return Spell.PreviousGcdSpell; }
         }
 
         #endregion
@@ -81,9 +87,9 @@ namespace SimcBasedCoRo.ClassSpecific
             {
                 get
                 {
-                    if (StyxWoW.Me.CurrentTarget == null) return 0;
+                    if (StyxWoW.Me.CurrentTarget == null) return int.MaxValue;
                     
-                    return StyxWoW.Me.CurrentTarget.TimeToDeath();
+                    return StyxWoW.Me.CurrentTarget.TimeToDeath(int.MaxValue);
                 }
             }
 

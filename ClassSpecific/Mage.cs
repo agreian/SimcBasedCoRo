@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using SimcBasedCoRo.Extensions;
 using SimcBasedCoRo.Managers;
 using SimcBasedCoRo.Utilities;
@@ -11,23 +12,6 @@ namespace SimcBasedCoRo.ClassSpecific
     // ReSharper disable once ClassNeverInstantiated.Global
     public class Mage : Common
     {
-        #region Fields
-
-        public static readonly Dictionary<string, SpellTypeEnum> Spells = new Dictionary<string, SpellTypeEnum>
-        {
-            {rune_of_power, SpellTypeEnum.CastOnGround},
-            {mirror_image, SpellTypeEnum.Buff},
-            {arcane_power, SpellTypeEnum.Buff}
-        };
-
-        private const string arcane_power = "Arcane Power";
-        private const string evocation = "Evocation";
-        private const string mirror_image = "Mirror Image";
-        private const string prismatic_crystal = "Prismatic Crystal";
-        private const string rune_of_power = "Rune of Power";
-
-        #endregion
-
         #region Enums
 
         private enum MageTalentsEnum
@@ -73,6 +57,45 @@ namespace SimcBasedCoRo.ClassSpecific
 
         #endregion
 
+        #region Constant
+
+        private const string arcane_barrage = "Arcane Barrage";
+
+        private const string arcane_charge = "Arcane Charge";
+        private const string arcane_explosion = "Arcane Explosion";
+        private const string arcane_instability = "Arcane Missiles!";
+        private const string arcane_missiles = "Arcane Missiles";
+        private const string arcane_orb = "Arcane Orb";
+        private const string arcane_power = "Arcane Power";
+        private const string cone_of_cold = "Cone of Cold";
+        private const string evocation = "Evocation";
+        private const string mirror_image = "Mirror Image";
+        private const string nether_tempest = "Nether Tempest";
+        private const string prismatic_crystal = "Prismatic Crystal";
+        private const string rune_of_power = "Rune of Power";
+        private const string supernova = "Supernova";
+
+        #endregion
+
+        #region Fields
+
+        public static readonly Dictionary<string, SpellTypeEnum> Spells = new Dictionary<string, SpellTypeEnum>
+        {
+            {rune_of_power, SpellTypeEnum.CastOnGround},
+            {mirror_image, SpellTypeEnum.Buff},
+            {arcane_power, SpellTypeEnum.Buff},
+            {nether_tempest, SpellTypeEnum.CastAoe},
+            {supernova, SpellTypeEnum.CastAoe},
+            {arcane_orb, SpellTypeEnum.CastAoe},
+            {arcane_explosion, SpellTypeEnum.CastAoe},
+            {evocation, SpellTypeEnum.Buff},
+            {arcane_missiles, SpellTypeEnum.Cast},
+            {arcane_barrage, SpellTypeEnum.Cast},
+            {cone_of_cold, SpellTypeEnum.CastAoe}
+        };
+
+        #endregion
+
         #region Properties
 
         public static ActionList ArcaneActionList
@@ -96,9 +119,9 @@ namespace SimcBasedCoRo.ClassSpecific
                     //actions+=/call_action_list,name=aoe,if=active_enemies>=5
                     new ActionList(arcane_aoe, () => active_enemies >= 5),
                     //actions+=/call_action_list,name=init_crystal,if=talent.prismatic_crystal.enabled&cooldown.prismatic_crystal.up
-                    new ActionList(arcane_init_crystal, () => talent.prismatic_crystal_enabled && cooldown.prismatic_crystal_up),
+                    //new ActionList(arcane_init_crystal, () => talent.prismatic_crystal_enabled && cooldown.prismatic_crystal_up),
                     //actions+=/call_action_list,name=crystal_sequence,if=talent.prismatic_crystal.enabled&pet.prismatic_crystal.active
-                    new ActionList(arcane_crystal_sequence, () => talent.prismatic_crystal_enabled && pet.prismatic_crystal_active),
+                    //new ActionList(arcane_crystal_sequence, () => talent.prismatic_crystal_enabled && pet.prismatic_crystal_active),
                     //actions+=/call_action_list,name=burn,if=time_to_die<mana.pct*0.35*spell_haste|cooldown.evocation.remains<=(mana.pct-30)*0.3*spell_haste|(buff.arcane_power.up&cooldown.evocation.remains<=(mana.pct-30)*0.4*spell_haste)
                     new ActionList(arcane_burn,
                         () => target.time_to_die < mana_pct*0.35*spell_haste || cooldown.evocation_remains <= (mana_pct - 30)*0.3*spell_haste || (buff.arcane_power_up && cooldown.evocation_remains <= (mana_pct - 30)*0.4*spell_haste)),
@@ -115,17 +138,27 @@ namespace SimcBasedCoRo.ClassSpecific
                 return new ActionList
                 {
                     //actions.aoe=call_action_list,name=cooldowns
-                    new ActionList(arcane_cooldowns)
+                    new ActionList(arcane_cooldowns),
                     //actions.aoe+=/nether_tempest,cycle_targets=1,if=buff.arcane_charge.stack=4&(active_dot.nether_tempest=0|(ticking&remains<3.6))
+                    new Spell(nether_tempest, () => buff.arcane_charge_stack == 4 && (!active_dot.nether_tempest_ticking || (active_dot.nether_tempest_ticking && active_dot.nether_tempest_remains < 3.6))),
                     //actions.aoe+=/supernova
+                    new Spell(supernova, () => active_enemies_list.Count(x => x.Distance < 8) > 1),
                     //actions.aoe+=/arcane_orb,if=buff.arcane_charge.stack<4
+                    new Spell(arcane_orb, () => buff.arcane_charge_stack < 4),
                     //actions.aoe+=/arcane_explosion,if=prev_gcd.evocation
+                    new Spell(arcane_explosion, () => prev_gcd == evocation),
                     //actions.aoe+=/evocation,interrupt_if=mana.pct>96,if=mana.pct<85-2.5*buff.arcane_charge.stack
+                    new Spell(evocation, () => mana_pct < 85 - 2.5*buff.arcane_charge_stack),
                     //actions.aoe+=/arcane_missiles,if=set_bonus.tier17_4pc&active_enemies<10&buff.arcane_charge.stack=4&buff.arcane_instability.react
+                    new Spell(arcane_missiles, () => active_enemies < 10 && buff.arcane_charge_stack == 4 && buff.arcane_instability_react),
                     //actions.aoe+=/nether_tempest,cycle_targets=1,if=talent.arcane_orb.enabled&buff.arcane_charge.stack=4&ticking&remains<cooldown.arcane_orb.remains
+                    new Spell(nether_tempest, () => talent.arcane_orb_enabled && buff.arcane_charge_stack == 4 && active_dot.nether_tempest_ticking & active_dot.nether_tempest_remains < cooldown.arcane_orb_remains),
                     //actions.aoe+=/arcane_barrage,if=buff.arcane_charge.stack=4
+                    new Spell(arcane_barrage, () => buff.arcane_charge_stack == 4),
                     //actions.aoe+=/cone_of_cold,if=glyph.cone_of_cold.enabled
+                    new Spell(cone_of_cold, () => glyph.cone_of_cold_enabled),
                     //actions.aoe+=/arcane_explosion
+                    new Spell(arcane_explosion)
                 };
             }
         }
@@ -231,20 +264,54 @@ namespace SimcBasedCoRo.ClassSpecific
 
         #endregion
 
-        #region Private Methods
-
-        private static double cast_time(string spell)
-        {
-            return Spell.GetSpellCastTime(spell).TotalSeconds;
-        }
-
-        #endregion
-
         #region Types
+
+        private static class active_dot
+        {
+            #region Properties
+
+            public static double nether_tempest_remains
+            {
+                get { return Remains(nether_tempest); }
+            }
+
+            public static bool nether_tempest_ticking
+            {
+                get { return Ticking(nether_tempest); }
+            }
+
+            #endregion
+
+            #region Private Methods
+
+            private static double Remains(string dot)
+            {
+                if (StyxWoW.Me.CurrentTarget == null) return 0;
+
+                return StyxWoW.Me.CurrentTarget.GetAuraTimeLeft(dot).TotalSeconds;
+            }
+
+            private static bool Ticking(string dot)
+            {
+                return Remains(dot) > 0;
+            }
+
+            #endregion
+        }
 
         private static class buff
         {
             #region Properties
+
+            public static uint arcane_charge_stack
+            {
+                get { return Stack(arcane_charge); }
+            }
+
+            public static bool arcane_instability_react
+            {
+                get { return React(arcane_instability); }
+            }
 
             public static bool arcane_power_up
             {
@@ -260,9 +327,19 @@ namespace SimcBasedCoRo.ClassSpecific
 
             #region Private Methods
 
+            private static bool React(string aura)
+            {
+                return StyxWoW.Me.HasAura(aura);
+            }
+
             private static double Remain(string aura)
             {
                 return StyxWoW.Me.GetAuraTimeLeft(aura).TotalSeconds;
+            }
+
+            private static uint Stack(string aura)
+            {
+                return StyxWoW.Me.GetAuraStacks(aura);
             }
 
             private static bool Up(string aura)
@@ -276,6 +353,11 @@ namespace SimcBasedCoRo.ClassSpecific
         private static class cooldown
         {
             #region Properties
+
+            public static double arcane_orb_remains
+            {
+                get { return Remains(arcane_orb); }
+            }
 
             public static double evocation_remains
             {
@@ -304,6 +386,18 @@ namespace SimcBasedCoRo.ClassSpecific
             #endregion
         }
 
+        private static class glyph
+        {
+            #region Properties
+
+            public static bool cone_of_cold_enabled
+            {
+                get { return TalentManager.HasGlyph(cone_of_cold); }
+            }
+
+            #endregion
+        }
+
         private static class pet
         {
             #region Properties
@@ -320,6 +414,11 @@ namespace SimcBasedCoRo.ClassSpecific
         {
             #region Properties
 
+            public static bool arcane_orb_enabled
+            {
+                get { return HasTalent(MageTalentsEnum.ArcaneOrb); }
+            }
+
             public static bool prismatic_crystal_enabled
             {
                 get { return HasTalent(MageTalentsEnum.PrismaticCrystal); }
@@ -331,10 +430,19 @@ namespace SimcBasedCoRo.ClassSpecific
 
             private static bool HasTalent(MageTalentsEnum tal)
             {
-                return TalentManager.IsSelected((int)tal);
+                return TalentManager.IsSelected((int) tal);
             }
 
             #endregion
+        }
+
+        #endregion
+
+        #region Private Methods
+
+        private static double cast_time(string spell)
+        {
+            return Spell.GetSpellCastTime(spell).TotalSeconds;
         }
 
         #endregion

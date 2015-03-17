@@ -4,6 +4,7 @@ using SimcBasedCoRo.ClassSpecific;
 using SimcBasedCoRo.Extensions;
 using SimcBasedCoRo.Utilities;
 using Styx;
+using Styx.Common;
 using Styx.Common.Helpers;
 using Styx.CommonBot.Routines;
 using Styx.WoWInternals;
@@ -98,6 +99,8 @@ namespace SimcBasedCoRo
                 ActiveEnemies = ObjectManager.ObjectList.OfType<WoWUnit>().Where(u => u != null && u.IsAggressive()).ToArray();
                 _waitForEnemiesCheck.Reset();
             }
+
+            Logging.Write("Spell Haste : {0}", StyxWoW.Me.SpellHasteModifier);
         }
 
         public override void Initialize()
