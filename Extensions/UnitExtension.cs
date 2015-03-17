@@ -54,6 +54,16 @@ namespace SimcBasedCoRo.Extensions
             return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
         }
 
+        public static TimeSpan GetAuraTimeLeft(this WoWUnit onUnit, int auraId, bool fromMyAura = true)
+        {
+            if (onUnit == null)
+                return TimeSpan.Zero;
+
+            var wantedAura = onUnit.GetAllAuras().FirstOrDefault(a => a != null && a.SpellId == auraId && a.TimeLeft > TimeSpan.Zero && (!fromMyAura || a.CreatorGuid == StyxWoW.Me.Guid));
+
+            return wantedAura != null ? wantedAura.TimeLeft : TimeSpan.Zero;
+        }
+
         public static bool HasAllMyAuras(this WoWUnit unit, params string[] auras)
         {
             return auras.All(unit.HasMyAura);

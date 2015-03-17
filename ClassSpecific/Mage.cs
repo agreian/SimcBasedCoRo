@@ -60,11 +60,13 @@ namespace SimcBasedCoRo.ClassSpecific
         #region Constant
 
         private const string arcane_barrage = "Arcane Barrage";
-
+        private const string arcane_blast = "Arcane Blast";
         private const string arcane_charge = "Arcane Charge";
         private const string arcane_explosion = "Arcane Explosion";
-        private const string arcane_instability = "Arcane Missiles!";
+        private const int arcane_instability = 166872;
         private const string arcane_missiles = "Arcane Missiles";
+        private const string arcane_missiles_proc = "Arcane Missiles!";
+        //private const int arcane_missiles_proc = 79683;
         private const string arcane_orb = "Arcane Orb";
         private const string arcane_power = "Arcane Power";
         private const string cone_of_cold = "Cone of Cold";
@@ -74,6 +76,7 @@ namespace SimcBasedCoRo.ClassSpecific
         private const string prismatic_crystal = "Prismatic Crystal";
         private const string rune_of_power = "Rune of Power";
         private const string supernova = "Supernova";
+        private const string presence_of_mind = "Presence of Mind";
 
         #endregion
 
@@ -91,7 +94,9 @@ namespace SimcBasedCoRo.ClassSpecific
             {evocation, SpellTypeEnum.Buff},
             {arcane_missiles, SpellTypeEnum.Cast},
             {arcane_barrage, SpellTypeEnum.Cast},
-            {cone_of_cold, SpellTypeEnum.CastAoe}
+            {cone_of_cold, SpellTypeEnum.CastAoe},
+            {presence_of_mind, SpellTypeEnum.Buff},
+            {arcane_blast, SpellTypeEnum.Buff}
         };
 
         #endregion
@@ -170,20 +175,35 @@ namespace SimcBasedCoRo.ClassSpecific
                 return new ActionList
                 {
                     //actions.burn=call_action_list,name=cooldowns
+                    new ActionList(arcane_cooldowns),
                     //actions.burn+=/arcane_missiles,if=buff.arcane_missiles.react=3
+                    new Spell(arcane_missiles, () => buff.arcane_missiles_stack == 3),
                     //actions.burn+=/arcane_missiles,if=set_bonus.tier17_4pc&buff.arcane_instability.react&buff.arcane_instability.remains<action.arcane_blast.execute_time
+                    new Spell(arcane_missiles, () => buff.arcane_instability_react && buff.arcane_instability_remains < action.arcane_blast_execute_time),
                     //actions.burn+=/supernova,if=time_to_die<8|charges=2
+                    new Spell(supernova, () => target.time_to_die < 8 || action.supernova_charges == 2),
                     //actions.burn+=/nether_tempest,cycle_targets=1,if=target!=prismatic_crystal&buff.arcane_charge.stack=4&(active_dot.nether_tempest=0|(ticking&remains<3.6))
+                    new Spell(nether_tempest, () => buff.arcane_charge_stack == 4 && (!active_dot.nether_tempest_ticking || (active_dot.nether_tempest_ticking && active_dot.nether_tempest_remains < 3.6))),
                     //actions.burn+=/arcane_orb,if=buff.arcane_charge.stack<4
+                    new Spell(arcane_orb, () => buff.arcane_charge_stack < 4),
                     //actions.burn+=/arcane_barrage,if=talent.arcane_orb.enabled&active_enemies>=3&buff.arcane_charge.stack=4&(cooldown.arcane_orb.remains<gcd|prev_gcd.arcane_orb)
+                    new Spell(arcane_barrage, () => talent.arcane_orb_enabled && active_enemies >= 3 && buff.arcane_charge_stack == 4 && (cooldown.arcane_orb_remains < gcd || prev_gcd == arcane_orb)),
                     //actions.burn+=/presence_of_mind,if=mana.pct>96&(!talent.prismatic_crystal.enabled|!cooldown.prismatic_crystal.up)
+                    new Spell(presence_of_mind, () => mana_pct > 96 && (!talent.prismatic_crystal_enabled || !cooldown.prismatic_crystal_up)),
                     //actions.burn+=/arcane_blast,if=buff.arcane_charge.stack=4&mana.pct>93
+                    new Spell(arcane_blast, () => buff.arcane_charge_stack == 4 && mana_pct > 93),
                     //actions.burn+=/arcane_missiles,if=buff.arcane_charge.stack=4&(mana.pct>70|!cooldown.evocation.up)
+                    new Spell(arcane_missiles, () => buff.arcane_charge_stack == 4 && (mana_pct > 70 || !cooldown.evocation_up)),
                     //actions.burn+=/supernova,if=mana.pct>70&mana.pct<96
+                    new Spell(supernova, () => mana_pct > 70 && mana_pct < 96),
                     //actions.burn+=/call_action_list,name=conserve,if=prev_gcd.evocation
+                    new ActionList(arcane_conserve, () => prev_gcd == evocation),
                     //actions.burn+=/evocation,interrupt_if=mana.pct>92,if=time_to_die>10&mana.pct<30+2.5*active_enemies*(9-active_enemies)
+                    new Spell(evocation, () => target.time_to_die > 10 && mana_pct < 30 + 2.5*active_enemies*(9 - active_enemies)),
                     //actions.burn+=/presence_of_mind,if=!talent.prismatic_crystal.enabled|!cooldown.prismatic_crystal.up
+                    new Spell(presence_of_mind, () => !talent.prismatic_crystal_enabled || !cooldown.prismatic_crystal_up),
                     //actions.burn+=/arcane_blast
+                    new Spell(arcane_blast),
                 };
             }
         }
@@ -266,6 +286,23 @@ namespace SimcBasedCoRo.ClassSpecific
 
         #region Types
 
+        private static class action
+        {
+            #region Properties
+
+            public static double arcane_blast_execute_time
+            {
+                get { return Spell.GetSpellCastTime(arcane_blast).TotalSeconds; }
+            }
+
+            public static int supernova_charges
+            {
+                get { return Spell.GetSpellCharges(supernova); }
+            }
+
+            #endregion
+        }
+
         private static class active_dot
         {
             #region Properties
@@ -313,6 +350,16 @@ namespace SimcBasedCoRo.ClassSpecific
                 get { return React(arcane_instability); }
             }
 
+            public static double arcane_instability_remains
+            {
+                get { return Remain(arcane_instability); }
+            }
+
+            public static decimal arcane_missiles_stack
+            {
+                get { return Stack(arcane_missiles_proc); }
+            }
+
             public static bool arcane_power_up
             {
                 get { return Up(arcane_power); }
@@ -327,12 +374,17 @@ namespace SimcBasedCoRo.ClassSpecific
 
             #region Private Methods
 
-            private static bool React(string aura)
+            private static bool React(int aura)
             {
                 return StyxWoW.Me.HasAura(aura);
             }
 
             private static double Remain(string aura)
+            {
+                return StyxWoW.Me.GetAuraTimeLeft(aura).TotalSeconds;
+            }
+
+            private static double Remain(int aura)
             {
                 return StyxWoW.Me.GetAuraTimeLeft(aura).TotalSeconds;
             }
@@ -367,6 +419,11 @@ namespace SimcBasedCoRo.ClassSpecific
             public static bool prismatic_crystal_up
             {
                 get { return Up(prismatic_crystal); }
+            }
+
+            public static bool evocation_up
+            {
+                get { return Up(evocation); }
             }
 
             #endregion
@@ -430,7 +487,7 @@ namespace SimcBasedCoRo.ClassSpecific
 
             private static bool HasTalent(MageTalentsEnum tal)
             {
-                return TalentManager.IsSelected((int) tal);
+                return TalentManager.IsSelected((int)tal);
             }
 
             #endregion

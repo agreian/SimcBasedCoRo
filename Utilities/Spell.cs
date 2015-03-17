@@ -2,6 +2,7 @@
 using System.Threading;
 using Bots.DungeonBuddy.Helpers;
 using SimcBasedCoRo.ClassSpecific;
+using SimcBasedCoRo.Extensions;
 using Styx;
 using Styx.CommonBot;
 using Styx.CommonBot.Coroutines;
@@ -154,6 +155,18 @@ namespace SimcBasedCoRo.Utilities
             }
 
             return TimeSpan.Zero;
+        }
+
+        public static int GetSpellCharges(string s)
+        {
+            SpellFindResults sfr;
+            if (SpellManager.FindSpell(s, out sfr))
+            {
+                var spell = sfr.Override ?? sfr.Original;
+                return spell.GetCharges();
+            }
+
+            return 0;
         }
 
         public static TimeSpan GetSpellCooldown(string spell)

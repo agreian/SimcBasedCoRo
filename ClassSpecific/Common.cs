@@ -5,6 +5,7 @@ using SimcBasedCoRo.Extensions;
 using SimcBasedCoRo.Managers;
 using SimcBasedCoRo.Utilities;
 using Styx;
+using Styx.CommonBot;
 using Styx.WoWInternals.WoWObjects;
 
 namespace SimcBasedCoRo.ClassSpecific
@@ -63,6 +64,11 @@ namespace SimcBasedCoRo.ClassSpecific
         protected static string prev_gcd
         {
             get { return Spell.PreviousGcdSpell; }
+        }
+
+        protected static double gcd
+        {
+            get { return SpellManager.GlobalCooldownLeft.TotalSeconds; }
         }
 
         #endregion

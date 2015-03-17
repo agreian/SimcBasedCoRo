@@ -100,7 +100,8 @@ namespace SimcBasedCoRo
                 _waitForEnemiesCheck.Reset();
             }
 
-            Logging.Write("Spell Haste : {0}", StyxWoW.Me.SpellHasteModifier);
+            if (StyxWoW.Me.CurrentTarget != null)
+                StyxWoW.Me.CurrentTarget.TimeToDeath();
         }
 
         public override void Initialize()
