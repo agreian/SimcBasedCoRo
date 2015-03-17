@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Threading;
-using Bots.DungeonBuddy.Helpers;
 using SimcBasedCoRo.ClassSpecific;
 using SimcBasedCoRo.Extensions;
 using Styx;
 using Styx.CommonBot;
-using Styx.CommonBot.Coroutines;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
@@ -45,12 +43,12 @@ namespace SimcBasedCoRo.Utilities
         {
         }
 
-        public Spell(SpellTypeEnum spellTypeEnum, string spellName, Func<WoWUnit> target)
-            : this(spellTypeEnum, spellName, null, target)
-        {
-        }
+        //public Spell(SpellTypeEnum spellTypeEnum, string spellName, Func<WoWUnit> target)
+        //    : this(spellTypeEnum, spellName, null, target)
+        //{
+        //}
 
-        public Spell(SpellTypeEnum spellTypeEnum, string spellName, Func<bool> requirements = null,
+        private Spell(SpellTypeEnum spellTypeEnum, string spellName, Func<bool> requirements = null,
             Func<WoWUnit> target = null)
         {
             if (string.IsNullOrWhiteSpace(spellName))

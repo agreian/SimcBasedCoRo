@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using SimcBasedCoRo.Extensions;
 using SimcBasedCoRo.Managers;
@@ -9,7 +8,7 @@ using Styx;
 namespace SimcBasedCoRo.ClassSpecific
 {
     // ReSharper disable InconsistentNaming
-    // ReSharper disable once ClassNeverInstantiated.Global
+    // ReSharper disable ClassNeverInstantiated.Global
     public class Mage : Common
     {
         #region Enums
@@ -270,37 +269,37 @@ namespace SimcBasedCoRo.ClassSpecific
             }
         }
 
-        private static ActionList arcane_crystal_sequence
-        {
-            get
-            {
-                return new ActionList
-                {
-                    //actions.crystal_sequence=call_action_list,name=cooldowns
-                    //actions.crystal_sequence+=/nether_tempest,if=buff.arcane_charge.stack=4&!ticking&pet.prismatic_crystal.remains>8
-                    //actions.crystal_sequence+=/supernova,if=mana.pct<96
-                    //actions.crystal_sequence+=/presence_of_mind,if=cooldown.cold_snap.up|pet.prismatic_crystal.remains<action.arcane_blast.cast_time
-                    //actions.crystal_sequence+=/arcane_blast,if=buff.arcane_charge.stack=4&mana.pct>93&pet.prismatic_crystal.remains>cast_time+buff.arcane_missiles.stack*2*spell_haste+action.arcane_missiles.travel_time
-                    //actions.crystal_sequence+=/arcane_missiles,if=pet.prismatic_crystal.remains>2*spell_haste+travel_time
-                    //actions.crystal_sequence+=/supernova,if=pet.prismatic_crystal.remains<action.arcane_blast.cast_time
-                    //actions.crystal_sequence+=/choose_target,if=pet.prismatic_crystal.remains<action.arcane_blast.cast_time&buff.presence_of_mind.down
-                    //actions.crystal_sequence+=/arcane_blast
-                };
-            }
-        }
+        //private static ActionList arcane_crystal_sequence
+        //{
+        //    get
+        //    {
+        //        return new ActionList
+        //        {
+        //            //actions.crystal_sequence=call_action_list,name=cooldowns
+        //            //actions.crystal_sequence+=/nether_tempest,if=buff.arcane_charge.stack=4&!ticking&pet.prismatic_crystal.remains>8
+        //            //actions.crystal_sequence+=/supernova,if=mana.pct<96
+        //            //actions.crystal_sequence+=/presence_of_mind,if=cooldown.cold_snap.up|pet.prismatic_crystal.remains<action.arcane_blast.cast_time
+        //            //actions.crystal_sequence+=/arcane_blast,if=buff.arcane_charge.stack=4&mana.pct>93&pet.prismatic_crystal.remains>cast_time+buff.arcane_missiles.stack*2*spell_haste+action.arcane_missiles.travel_time
+        //            //actions.crystal_sequence+=/arcane_missiles,if=pet.prismatic_crystal.remains>2*spell_haste+travel_time
+        //            //actions.crystal_sequence+=/supernova,if=pet.prismatic_crystal.remains<action.arcane_blast.cast_time
+        //            //actions.crystal_sequence+=/choose_target,if=pet.prismatic_crystal.remains<action.arcane_blast.cast_time&buff.presence_of_mind.down
+        //            //actions.crystal_sequence+=/arcane_blast
+        //        };
+        //    }
+        //}
 
-        private static ActionList arcane_init_crystal
-        {
-            get
-            {
-                return new ActionList
-                {
-                    //actions.init_crystal=call_action_list,name=conserve,if=buff.arcane_charge.stack<4
-                    //actions.init_crystal+=/prismatic_crystal,if=buff.arcane_charge.stack=4&cooldown.arcane_power.remains<0.5
-                    //actions.init_crystal+=/prismatic_crystal,if=glyph.arcane_power.enabled&buff.arcane_charge.stack=4&cooldown.arcane_power.remains>75
-                };
-            }
-        }
+        //private static ActionList arcane_init_crystal
+        //{
+        //    get
+        //    {
+        //        return new ActionList
+        //        {
+        //            //actions.init_crystal=call_action_list,name=conserve,if=buff.arcane_charge.stack<4
+        //            //actions.init_crystal+=/prismatic_crystal,if=buff.arcane_charge.stack=4&cooldown.arcane_power.remains<0.5
+        //            //actions.init_crystal+=/prismatic_crystal,if=glyph.arcane_power.enabled&buff.arcane_charge.stack=4&cooldown.arcane_power.remains>75
+        //        };
+        //    }
+        //}
 
         #endregion
 
@@ -505,17 +504,17 @@ namespace SimcBasedCoRo.ClassSpecific
             #endregion
         }
 
-        private static class pet
-        {
-            #region Properties
+        //private static class pet
+        //{
+        //    #region Properties
 
-            public static bool prismatic_crystal_active
-            {
-                get { throw new NotImplementedException(); }
-            }
+        //    public static bool prismatic_crystal_active
+        //    {
+        //        get { throw new NotImplementedException(); }
+        //    }
 
-            #endregion
-        }
+        //    #endregion
+        //}
 
         private static class talent
         {

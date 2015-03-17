@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using Styx;
 using Styx.WoWInternals;
@@ -69,12 +68,12 @@ namespace SimcBasedCoRo.Extensions
             return auras.All(unit.HasMyAura);
         }
 
-        public static bool HasAnyOfMyAuras(this WoWUnit unit, params string[] auraNames)
-        {
-            var auras = unit.GetAllAuras();
-            var hashes = new HashSet<string>(auraNames);
-            return auras.Any(a => a.CreatorGuid == StyxWoW.Me.Guid && hashes.Contains(a.Name));
-        }
+        //public static bool HasAnyOfMyAuras(this WoWUnit unit, params string[] auraNames)
+        //{
+        //    var auras = unit.GetAllAuras();
+        //    var hashes = new HashSet<string>(auraNames);
+        //    return auras.Any(a => a.CreatorGuid == StyxWoW.Me.Guid && hashes.Contains(a.Name));
+        //}
 
         /// <summary>
         /// checks if unit is targeting you, your minions, a group member, or group pets

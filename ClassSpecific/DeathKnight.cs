@@ -9,7 +9,7 @@ using Styx.WoWInternals.WoWObjects;
 namespace SimcBasedCoRo.ClassSpecific
 {
     // ReSharper disable InconsistentNaming
-    // ReSharper disable once ClassNeverInstantiated.Global
+    // ReSharper disable ClassNeverInstantiated.Global
     public class DeathKnight : Common
     {
         #region Constant
@@ -39,14 +39,14 @@ namespace SimcBasedCoRo.ClassSpecific
             {unholy_blight, SpellTypeEnum.Buff}
         };
 
-        private const string antimagic_shell = "Anti-Magic Shell";
+        //private const string antimagic_shell = "Anti-Magic Shell";
         private const string blood_charge = "Blood Charge";
         private const string blood_plague = "Blood Plague";
         private const string blood_tap = "Blood Tap";
         //public const string bone_shield = "Bone Shield";
         private const string breath_of_sindragosa = "Breath of Sindragosa";
         //public const string conversion = "Conversion";
-        private const int crimson_scourge = 81141;
+        //private const int crimson_scourge = 81141;
         //public const string dancing_rune_weapon = "Dancing Rune Weapon";
         private const string dark_transformation = "Dark Transformation";
         private const string death_and_decay = "Death and Decay";
@@ -54,15 +54,15 @@ namespace SimcBasedCoRo.ClassSpecific
         private const string defile = "Defile";
         private const string empower_rune_weapon = "Empower Rune Weapon";
         private const string festering_strike = "Festering Strike";
-        private const int freezing_fog = 59052;
+        //private const int freezing_fog = 59052;
         private const string frost_fever = "Frost Fever";
         //public const string icebound_fortitude = "Icebound Fortitude";
         private const string icy_touch = "Icy Touch";
-        private const int killing_machine = 51124;
+        //private const int killing_machine = 51124;
         //public const string lichborne = "Lichborne";
         private const string necrotic_plague = "Necrotic Plague";
         private const string outbreak = "Outbreak";
-        private const string pillar_of_frost = "Pillar of Frost";
+        //private const string pillar_of_frost = "Pillar of Frost";
         private const string plague_leech = "Plague Leech";
         private const string plague_strike = "Plague Strike";
         private const string raise_dead = "Raise Dead";
@@ -395,25 +395,25 @@ namespace SimcBasedCoRo.ClassSpecific
                 get { return Stack(blood_charge); }
             }
 
-            public static bool crimson_scourge_react
-            {
-                get { return React(crimson_scourge); }
-            }
+            //public static bool crimson_scourge_react
+            //{
+            //    get { return React(crimson_scourge); }
+            //}
 
             public static bool dark_transformation_down
             {
                 get { return PetDown(dark_transformation); }
             }
 
-            public static bool killing_machine_react
-            {
-                get { return React(killing_machine); }
-            }
+            //public static bool killing_machine_react
+            //{
+            //    get { return React(killing_machine); }
+            //}
 
-            public static bool rime_react
-            {
-                get { return React(freezing_fog); }
-            }
+            //public static bool rime_react
+            //{
+            //    get { return React(freezing_fog); }
+            //}
 
             public static uint shadow_infusion_stack
             {
@@ -456,10 +456,10 @@ namespace SimcBasedCoRo.ClassSpecific
         {
             #region Properties
 
-            public static double antimagic_shell_remains
-            {
-                get { return Remains(antimagic_shell); }
-            }
+            //public static double antimagic_shell_remains
+            //{
+            //    get { return Remains(antimagic_shell); }
+            //}
 
             public static double breath_of_sindragosa_remains
             {
@@ -481,10 +481,10 @@ namespace SimcBasedCoRo.ClassSpecific
                 get { return Remains(outbreak); }
             }
 
-            public static double pillar_of_frost_remains
-            {
-                get { return Remains(pillar_of_frost); }
-            }
+            //public static double pillar_of_frost_remains
+            //{
+            //    get { return Remains(pillar_of_frost); }
+            //}
 
             public static double soul_reaper_remains
             {
@@ -519,15 +519,15 @@ namespace SimcBasedCoRo.ClassSpecific
 
             #region Properties
 
-            public static double max_remains
-            {
-                get { return max_remains_on(StyxWoW.Me.CurrentTarget); }
-            }
+            //public static double max_remains
+            //{
+            //    get { return max_remains_on(StyxWoW.Me.CurrentTarget); }
+            //}
 
-            public static bool max_ticking
-            {
-                get { return max_ticking_on(StyxWoW.Me.CurrentTarget); }
-            }
+            //public static bool max_ticking
+            //{
+            //    get { return max_ticking_on(StyxWoW.Me.CurrentTarget); }
+            //}
 
             public static double min_remains
             {
@@ -539,7 +539,7 @@ namespace SimcBasedCoRo.ClassSpecific
                 get { return ticking; }
             }
 
-            public static bool ticking
+            private static bool ticking
             {
                 get { return ticking_on(StyxWoW.Me.CurrentTarget); }
             }
@@ -564,32 +564,32 @@ namespace SimcBasedCoRo.ClassSpecific
 
             #region Private Methods
 
-            private static double max_remains_on(WoWUnit unit)
-            {
-                if (unit == null) return 0;
+            //private static double max_remains_on(WoWUnit unit)
+            //{
+            //    if (unit == null) return 0;
 
-                var max = double.MinValue;
+            //    var max = double.MinValue;
 
-                // ReSharper disable once LoopCanBeConvertedToQuery
-                foreach (var s in diseaseArray)
-                {
-                    var rmn = unit.GetAuraTimeLeft(s).TotalSeconds;
-                    if (rmn > max)
-                        max = rmn;
-                }
+            //    // ReSharper disable once LoopCanBeConvertedToQuery
+            //    foreach (var s in diseaseArray)
+            //    {
+            //        var rmn = unit.GetAuraTimeLeft(s).TotalSeconds;
+            //        if (rmn > max)
+            //            max = rmn;
+            //    }
 
-                if (max <= double.MinValue)
-                    max = 0;
+            //    if (max <= double.MinValue)
+            //        max = 0;
 
-                return max;
-            }
+            //    return max;
+            //}
 
-            private static bool max_ticking_on(WoWUnit unit)
-            {
-                if(unit == null) return false;
+            //private static bool max_ticking_on(WoWUnit unit)
+            //{
+            //    if(unit == null) return false;
 
-                return unit.HasAnyOfMyAuras(diseaseArray);
-            }
+            //    return unit.HasAnyOfMyAuras(diseaseArray);
+            //}
 
             private static double min_remains_on(WoWUnit unit)
             {
@@ -672,46 +672,34 @@ namespace SimcBasedCoRo.ClassSpecific
             #endregion
         }
 
-        private static class obliterate
-        {
-            #region Properties
-
-            public static double ready_in
-            {
-                get { return 0; }
-            }
-
-            #endregion
-        }
-
         private static class talent
         {
             #region Properties
 
-            public static bool blood_tap_enabled
-            {
-                get { return HasTalent(DeathKnightTalentsEnum.BloodTap); }
-            }
+            //public static bool blood_tap_enabled
+            //{
+            //    get { return HasTalent(DeathKnightTalentsEnum.BloodTap); }
+            //}
 
             public static bool breath_of_sindragosa_enabled
             {
                 get { return HasTalent(DeathKnightTalentsEnum.BreathOfSindragosa); }
             }
 
-            public static bool defile_enabled
-            {
-                get { return HasTalent(DeathKnightTalentsEnum.Defile); }
-            }
+            //public static bool defile_enabled
+            //{
+            //    get { return HasTalent(DeathKnightTalentsEnum.Defile); }
+            //}
 
             public static bool necrotic_plague_enabled
             {
                 get { return HasTalent(DeathKnightTalentsEnum.NecroticPlague); }
             }
 
-            public static bool runic_empowerment_enabled
-            {
-                get { return HasTalent(DeathKnightTalentsEnum.RunicEmpowerment); }
-            }
+            //public static bool runic_empowerment_enabled
+            //{
+            //    get { return HasTalent(DeathKnightTalentsEnum.RunicEmpowerment); }
+            //}
 
             public static bool unholy_blight_enabled
             {
@@ -732,6 +720,4 @@ namespace SimcBasedCoRo.ClassSpecific
 
         #endregion
     }
-
-    // ReSharper restore InconsistentNaming
 }

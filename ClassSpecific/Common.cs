@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using SimcBasedCoRo.Extensions;
 using SimcBasedCoRo.Managers;
@@ -46,10 +45,10 @@ namespace SimcBasedCoRo.ClassSpecific
             }
         }
 
-        protected static double health_pct
-        {
-            get { return Me.HealthPercent; }
-        }
+        //protected static double health_pct
+        //{
+        //    get { return Me.HealthPercent; }
+        //}
 
         protected static double mana_pct
         {
@@ -79,6 +78,7 @@ namespace SimcBasedCoRo.ClassSpecific
         {
             #region Properties
 
+            // ReSharper disable once MemberHidesStaticFromOuterClass
             public static double health_pct
             {
                 get
@@ -94,7 +94,7 @@ namespace SimcBasedCoRo.ClassSpecific
                 get
                 {
                     if (StyxWoW.Me.CurrentTarget == null) return int.MaxValue;
-                    
+
                     return StyxWoW.Me.CurrentTarget.TimeToDeath(int.MaxValue);
                 }
             }

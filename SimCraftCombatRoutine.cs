@@ -4,7 +4,6 @@ using SimcBasedCoRo.ClassSpecific;
 using SimcBasedCoRo.Extensions;
 using SimcBasedCoRo.Utilities;
 using Styx;
-using Styx.Common;
 using Styx.Common.Helpers;
 using Styx.CommonBot.Routines;
 using Styx.WoWInternals;
