@@ -548,14 +548,5 @@ namespace SimcBasedCoRo.ClassSpecific
         }
 
         #endregion
-
-        #region Private Methods
-
-        private static double cast_time(string spell)
-        {
-            return Spell.GetSpellCastTime(spell).TotalSeconds;
-        }
-
-        #endregion
     }
 }
