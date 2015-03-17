@@ -117,7 +117,7 @@ namespace SimcBasedCoRo.ClassSpecific
                     //actions+=/time_warp,if=target.health.pct<25|time>5
                     //actions+=/ice_floes,if=buff.ice_floes.down&(raid_event.movement.distance>0|raid_event.movement.in<action.arcane_missiles.cast_time)
                     //actions+=/rune_of_power,if=buff.rune_of_power.remains<cast_time
-                    new Spell(rune_of_power, () => buff.rune_of_power_remain < cast_time(rune_of_power), () => Me),
+                    new Spell(rune_of_power, () => !buff.rune_of_power_react, () => Me),
                     //actions+=/mirror_image
                     new Spell(mirror_image),
                     //actions+=/cold_snap,if=buff.presence_of_mind.down&cooldown.presence_of_mind.remains>75
@@ -395,14 +395,19 @@ namespace SimcBasedCoRo.ClassSpecific
                 get { return Up(arcane_power); }
             }
 
-            public static double rune_of_power_remain
+            public static bool rune_of_power_react
             {
-                get { return Remain(rune_of_power); }
+                get { return React(rune_of_power); }
             }
 
             #endregion
 
             #region Private Methods
+
+            private static bool React(string aura)
+            {
+                return StyxWoW.Me.HasAura(aura);
+            }
 
             private static bool React(int aura)
             {
