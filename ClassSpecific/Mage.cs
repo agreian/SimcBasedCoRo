@@ -73,10 +73,10 @@ namespace SimcBasedCoRo.ClassSpecific
         private const string evocation = "Evocation";
         private const string mirror_image = "Mirror Image";
         private const string nether_tempest = "Nether Tempest";
+        private const string presence_of_mind = "Presence of Mind";
         private const string prismatic_crystal = "Prismatic Crystal";
         private const string rune_of_power = "Rune of Power";
         private const string supernova = "Supernova";
-        private const string presence_of_mind = "Presence of Mind";
 
         #endregion
 
@@ -215,21 +215,41 @@ namespace SimcBasedCoRo.ClassSpecific
                 return new ActionList
                 {
                     //actions.conserve=call_action_list,name=cooldowns,if=time_to_die<30|(buff.arcane_charge.stack=4&(!talent.prismatic_crystal.enabled|cooldown.prismatic_crystal.remains>15))
+                    new ActionList(arcane_cooldowns, () => target.time_to_die < 30 || (buff.arcane_charge_stack == 4 && (!talent.prismatic_crystal_enabled || cooldown.prismatic_crystal_remains > 15))),
                     //actions.conserve+=/arcane_missiles,if=buff.arcane_missiles.react=3|(talent.overpowered.enabled&buff.arcane_power.up&buff.arcane_power.remains<action.arcane_blast.execute_time)
+                    new Spell(arcane_missiles, () => buff.arcane_missiles_stack == 3 || (talent.overpowered_enabled && buff.arcane_power_up && buff.arcane_power_remains < action.arcane_blast_execute_time)),
                     //actions.conserve+=/arcane_missiles,if=set_bonus.tier17_4pc&buff.arcane_instability.react&buff.arcane_instability.remains<action.arcane_blast.execute_time
+                    new Spell(arcane_missiles, () => buff.arcane_instability_react && buff.arcane_instability_remains < action.arcane_blast_execute_time),
                     //actions.conserve+=/nether_tempest,cycle_targets=1,if=target!=prismatic_crystal&buff.arcane_charge.stack=4&(active_dot.nether_tempest=0|(ticking&remains<3.6))
+                    new Spell(nether_tempest, () => buff.arcane_charge_stack == 4 && (!active_dot.nether_tempest_ticking || (active_dot.nether_tempest_ticking && active_dot.nether_tempest_remains < 3.6))),
                     //actions.conserve+=/supernova,if=time_to_die<8|(charges=2&(buff.arcane_power.up|!cooldown.arcane_power.up)&(!talent.prismatic_crystal.enabled|cooldown.prismatic_crystal.remains>8))
+                    new Spell(supernova, () => target.time_to_die < 8 || (action.supernova_charges == 2 && (buff.arcane_power_up || !cooldown.arcane_power_up) && (!talent.prismatic_crystal_enabled | cooldown.prismatic_crystal_remains > 8))),
                     //actions.conserve+=/arcane_orb,if=buff.arcane_charge.stack<2
+                    new Spell(arcane_orb, () => buff.arcane_charge_stack < 2),
                     //actions.conserve+=/presence_of_mind,if=mana.pct>96&(!talent.prismatic_crystal.enabled|!cooldown.prismatic_crystal.up)
+                    new Spell(presence_of_mind, () => mana_pct > 96 && (!talent.prismatic_crystal_enabled || !cooldown.prismatic_crystal_up)),
                     //actions.conserve+=/arcane_blast,if=buff.arcane_charge.stack=4&mana.pct>93
+                    new Spell(arcane_blast, () => buff.arcane_charge_stack == 4 && mana_pct > 93),
                     //actions.conserve+=/arcane_barrage,if=talent.arcane_orb.enabled&active_enemies>=3&buff.arcane_charge.stack=4&(cooldown.arcane_orb.remains<gcd|prev_gcd.arcane_orb)
+                    new Spell(arcane_barrage, () => talent.arcane_orb_enabled && active_enemies >= 3 && buff.arcane_charge_stack == 4 && (cooldown.arcane_orb_remains < gcd || prev_gcd == arcane_orb)),
                     //actions.conserve+=/arcane_missiles,if=buff.arcane_charge.stack=4&(!talent.overpowered.enabled|cooldown.arcane_power.remains>10*spell_haste)
+                    new Spell(arcane_missiles, () => buff.arcane_charge_stack == 4 && (!talent.overpowered_enabled || cooldown.arcane_power_remains > 10*spell_haste)),
                     //actions.conserve+=/supernova,if=mana.pct<96&(buff.arcane_missiles.stack<2|buff.arcane_charge.stack=4)&(buff.arcane_power.up|(charges=1&cooldown.arcane_power.remains>recharge_time))&(!talent.prismatic_crystal.enabled|current_target=prismatic_crystal|(charges=1&cooldown.prismatic_crystal.remains>recharge_time+8))
+                    new Spell(supernova,
+                        () =>
+                            mana_pct < 96 && (buff.arcane_missiles_stack < 2 || buff.arcane_charge_stack == 4) && (buff.arcane_power_up | (action.supernova_charges == 1 && cooldown.arcane_power_remains > action.supernova_recharge_time)) &&
+                            (!talent.prismatic_crystal_enabled || (action.supernova_charges == 1 && cooldown.prismatic_crystal_remains > action.supernova_recharge_time + 8))),
                     //actions.conserve+=/nether_tempest,cycle_targets=1,if=target!=prismatic_crystal&buff.arcane_charge.stack=4&(active_dot.nether_tempest=0|(ticking&remains<(10-3*talent.arcane_orb.enabled)*spell_haste))
+                    new Spell(nether_tempest,
+                        () => buff.arcane_charge_stack == 4 && (!active_dot.nether_tempest_ticking || (active_dot.nether_tempest_ticking & active_dot.nether_tempest_remains < (10 - 3*(talent.arcane_orb_enabled ? 1 : 0))*spell_haste))),
                     //actions.conserve+=/arcane_barrage,if=buff.arcane_charge.stack=4
+                    new Spell(arcane_barrage, () => buff.arcane_charge_stack == 4),
                     //actions.conserve+=/presence_of_mind,if=buff.arcane_charge.stack<2&(!talent.prismatic_crystal.enabled|!cooldown.prismatic_crystal.up)
+                    new Spell(presence_of_mind, () => buff.arcane_charge_stack < 2 && (!talent.prismatic_crystal_enabled || !cooldown.prismatic_crystal_up)),
                     //actions.conserve+=/arcane_blast
+                    new Spell(arcane_blast),
                     //actions.conserve+=/arcane_barrage,moving=1
+                    new Spell(arcane_barrage)
                 };
             }
         }
@@ -300,6 +320,11 @@ namespace SimcBasedCoRo.ClassSpecific
                 get { return Spell.GetSpellCharges(supernova); }
             }
 
+            public static double supernova_recharge_time
+            {
+                get { return Spell.GetSpellCastTime(supernova).TotalSeconds; }
+            }
+
             #endregion
         }
 
@@ -360,6 +385,11 @@ namespace SimcBasedCoRo.ClassSpecific
                 get { return Stack(arcane_missiles_proc); }
             }
 
+            public static double arcane_power_remains
+            {
+                get { return Remain(arcane_power); }
+            }
+
             public static bool arcane_power_up
             {
                 get { return Up(arcane_power); }
@@ -411,19 +441,34 @@ namespace SimcBasedCoRo.ClassSpecific
                 get { return Remains(arcane_orb); }
             }
 
+            public static double arcane_power_remains
+            {
+                get { return Remains(arcane_power); }
+            }
+
+            public static bool arcane_power_up
+            {
+                get { return Up(arcane_power); }
+            }
+
             public static double evocation_remains
             {
                 get { return Remains(evocation); }
             }
 
-            public static bool prismatic_crystal_up
-            {
-                get { return Up(prismatic_crystal); }
-            }
-
             public static bool evocation_up
             {
                 get { return Up(evocation); }
+            }
+
+            public static double prismatic_crystal_remains
+            {
+                get { return Remains(prismatic_crystal); }
+            }
+
+            public static bool prismatic_crystal_up
+            {
+                get { return Up(prismatic_crystal); }
             }
 
             #endregion
@@ -476,6 +521,11 @@ namespace SimcBasedCoRo.ClassSpecific
                 get { return HasTalent(MageTalentsEnum.ArcaneOrb); }
             }
 
+            public static bool overpowered_enabled
+            {
+                get { return HasTalent(MageTalentsEnum.Overpowered); }
+            }
+
             public static bool prismatic_crystal_enabled
             {
                 get { return HasTalent(MageTalentsEnum.PrismaticCrystal); }
@@ -487,7 +537,7 @@ namespace SimcBasedCoRo.ClassSpecific
 
             private static bool HasTalent(MageTalentsEnum tal)
             {
-                return TalentManager.IsSelected((int)tal);
+                return TalentManager.IsSelected((int) tal);
             }
 
             #endregion
