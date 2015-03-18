@@ -95,7 +95,7 @@ namespace SimcBasedCoRo.ClassSpecific
             {arcane_barrage, SpellTypeEnum.Cast},
             {cone_of_cold, SpellTypeEnum.CastAoe},
             {presence_of_mind, SpellTypeEnum.Buff},
-            {arcane_blast, SpellTypeEnum.Buff}
+            {arcane_blast, SpellTypeEnum.Cast}
         };
 
         #endregion
@@ -347,8 +347,6 @@ namespace SimcBasedCoRo.ClassSpecific
 
             private static double Remains(string dot)
             {
-                if (StyxWoW.Me.CurrentTarget == null) return 0;
-
                 return StyxWoW.Me.CurrentTarget.GetAuraTimeLeft(dot).TotalSeconds;
             }
 

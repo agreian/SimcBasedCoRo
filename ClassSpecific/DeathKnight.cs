@@ -664,8 +664,6 @@ namespace SimcBasedCoRo.ClassSpecific
 
             private static double Remains(string aura)
             {
-                if (StyxWoW.Me.CurrentTarget == null) return 0;
-
                 return StyxWoW.Me.CurrentTarget.GetAuraTimeLeft(aura).TotalSeconds;
             }
 

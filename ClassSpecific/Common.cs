@@ -81,22 +81,12 @@ namespace SimcBasedCoRo.ClassSpecific
             // ReSharper disable once MemberHidesStaticFromOuterClass
             public static double health_pct
             {
-                get
-                {
-                    if (StyxWoW.Me.CurrentTarget == null) return 100;
-
-                    return StyxWoW.Me.CurrentTarget.HealthPercent;
-                }
+                get { return StyxWoW.Me.CurrentTarget.HealthPercent; }
             }
 
             public static long time_to_die
             {
-                get
-                {
-                    if (StyxWoW.Me.CurrentTarget == null) return int.MaxValue;
-
-                    return StyxWoW.Me.CurrentTarget.TimeToDeath(int.MaxValue);
-                }
+                get { return StyxWoW.Me.CurrentTarget.TimeToDeath(int.MaxValue); }
             }
 
             #endregion

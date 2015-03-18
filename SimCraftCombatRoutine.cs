@@ -79,6 +79,8 @@ namespace SimcBasedCoRo
 
         public override void Combat()
         {
+            if(StyxWoW.Me.CurrentTarget == null || !StyxWoW.Me.CurrentTarget.Attackable) return;
+
             Specialization = StyxWoW.Me.Specialization;
 
             if (_currentActionList != null)
@@ -99,7 +101,7 @@ namespace SimcBasedCoRo
                 _waitForEnemiesCheck.Reset();
             }
 
-            if (StyxWoW.Me.CurrentTarget != null)
+            if (StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget.Attackable)
                 StyxWoW.Me.CurrentTarget.TimeToDeath();
         }
 
