@@ -43,23 +43,23 @@ namespace SimcBasedCoRo.Settings
         }
 
         [Setting, ReadOnly(false)]
-        [DefaultValue(TrinketUsage.Never)]
-        [Category("Items")]
-        [DisplayName("Trinket 1 Usage")]
-        public TrinketUsage Trinket1Usage { get; set; }
-
-        [Setting, ReadOnly(false)]
-        [DefaultValue(TrinketUsage.Never)]
-        [Category("Items")]
-        [DisplayName("Trinket 2 Usage")]
-        public TrinketUsage Trinket2Usage { get; set; }
-
-        [Setting, ReadOnly(false)]
         [DefaultValue(false)]
         [Category("Pets")]
         [DisplayName("Disable Pet usage")]
         [Description("Enabling that will disable pet usage")]
         public bool DisablePetUsage { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(TrinketUsage.OnCooldownInCombat)]
+        [Category("Items")]
+        [DisplayName("Trinket 1 Usage")]
+        public TrinketUsage Trinket1Usage { get; set; }
+
+        [Setting, ReadOnly(false)]
+        [DefaultValue(TrinketUsage.OnCooldownInCombat)]
+        [Category("Items")]
+        [DisplayName("Trinket 2 Usage")]
+        public TrinketUsage Trinket2Usage { get; set; }
 
         #endregion
 
@@ -71,13 +71,6 @@ namespace SimcBasedCoRo.Settings
         }
 
         #endregion
-    }
-
-    public enum DebugOutputDest
-    {
-        None = 0,
-        FileOnly = 1,
-        WindowAndFile = 3
     }
 
     public enum TrinketUsage
