@@ -52,6 +52,7 @@
     <Reference Include="Honorbuddy">
       <HintPath>..\..\Honorbuddy.exe</HintPath>
     </Reference>
+    <Reference Include="PresentationCore" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Windows.Forms" />
@@ -62,22 +63,42 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClassSpecific\Common.cs" />
+    <Compile Include="ClassSpecific\Common\ActionBase.cs" />
+    <Compile Include="ClassSpecific\Common\Base.cs" />
+    <Compile Include="ClassSpecific\Common\BuffBase.cs" />
+    <Compile Include="ClassSpecific\Common\ClassSpecificBase.cs" />
+    <Compile Include="ClassSpecific\Common\CooldownBase.cs" />
+    <Compile Include="ClassSpecific\Common\DebuffBase.cs" />
+    <Compile Include="ClassSpecific\Common\DotBase.cs" />
+    <Compile Include="ClassSpecific\Common\GlyphBase.cs" />
+    <Compile Include="Utilities\Item.cs" />
+    <Compile Include="ClassSpecific\Common\TalentBase.cs" />
+    <Compile Include="ClassSpecific\DeathKnight.cs" />
     <Compile Include="ClassSpecific\Mage.cs" />
+    <Compile Include="ClassSpecific\Paladin.cs" />
+    <Compile Include="ClassSpecific\Shaman.cs" />
+    <Compile Include="ClassSpecific\Warrior.cs" />
+    <Compile Include="Extensions\Extensions.cs" />
+    <Compile Include="Extensions\TimeToDeathExtension.cs" />
     <Compile Include="Extensions\WoWSpellExtension.cs" />
     <Compile Include="Managers\HotkeysManager.cs" />
-    <Compile Include="Utilities\ActionList.cs" />
-    <Compile Include="ClassSpecific\DeathKnight.cs" />
-    <Compile Include="Utilities\ISpellRun.cs" />
     <Compile Include="SimCraftCombatRoutine.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Settings\SimcBasedCoRoSettings.cs" />
     <Compile Include="Utilities\Spell.cs" />
-    <Compile Include="Utilities\SpellResultEnum.cs" />
     <Compile Include="Managers\TalentManager.cs" />
     <Compile Include="Extensions\UnitExtension.cs" />
-    <Compile Include="Utilities\SpellTypeEnum.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="SimC Profiles\Death_Knight_Blood_T17M.simc" />
+    <None Include="SimC Profiles\Death_Knight_Frost_1h_T18M.simc" />
+    <None Include="SimC Profiles\Death_Knight_Frost_2h_T18M.simc" />
+    <None Include="SimC Profiles\Death_Knight_Unholy_T18M.simc" />
+    <None Include="SimC Profiles\Mage_Arcane_T18M.simc" />
+    <None Include="SimC Profiles\Paladin_Retribution_T18M.simc" />
+    <None Include="SimC Profiles\Shaman_Enhancement_T18M.simc" />
+    <None Include="SimC Profiles\Warrior_Arms_T18M.simc" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -1,64 +1,24 @@
 ﻿using System;
+using System.Collections.Generic;
 using Buddy.Coroutines;
-using SimcBasedCoRo.ClassSpecific;
+using CommonBehaviors.Actions;
 using SimcBasedCoRo.Extensions;
 using Styx;
+using Styx.Common;
 using Styx.CommonBot;
+using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 namespace SimcBasedCoRo.Utilities
 {
-    public class Spell : ISpellRun
+    public class Spell
     {
         #region Fields
 
-        private readonly Func<bool> _requirements;
-        private readonly string _spellName;
-        private readonly SpellTypeEnum _spellTypeEnum;
-        private readonly Func<WoWUnit> _target;
+        internal static readonly Dictionary<string, long> UndefinedSpells = new Dictionary<string, long>();
 
-        #endregion
-
-        #region Constructors
-
-        public Spell(string spellName, Func<bool> requirements = null, Func<WoWUnit> target = null)
-            : this(SpellTypeEnum.Cast, spellName, requirements, target)
-        {
-            switch (StyxWoW.Me.Class)
-            {
-                case WoWClass.DeathKnight:
-                    _spellTypeEnum = DeathKnight.Spells[spellName];
-                    break;
-                case WoWClass.Mage:
-                    _spellTypeEnum = Mage.Spells[spellName];
-                    break;
-                default:
-                    throw new ArgumentException();
-            }
-        }
-
-        public Spell(string spellName, Func<WoWUnit> target)
-            : this(spellName, null, target)
-        {
-        }
-
-        //public Spell(SpellTypeEnum spellTypeEnum, string spellName, Func<WoWUnit> target)
-        //    : this(spellTypeEnum, spellName, null, target)
-        //{
-        //}
-
-        private Spell(SpellTypeEnum spellTypeEnum, string spellName, Func<bool> requirements = null,
-            Func<WoWUnit> target = null)
-        {
-            if (string.IsNullOrWhiteSpace(spellName))
-                throw new ArgumentException("spellName");
-
-            _spellTypeEnum = spellTypeEnum;
-            _spellName = spellName;
-            _requirements = requirements;
-            _target = target;
-        }
+        private static bool _useAoe = true;
 
         #endregion
 
@@ -66,87 +26,179 @@ namespace SimcBasedCoRo.Utilities
 
         public static string PreviousGcdSpell { get; private set; }
 
-        #endregion
-
-        #region ISpellRun Members
-
-        public SpellResultEnum Run()
+        public static bool UseAoe
         {
-            if (_requirements != null && !_requirements())
-                return SpellResultEnum.Failure;
-
-            SpellFindResults result;
-            if (!SpellManager.FindSpell(_spellName, out result))
-                return SpellResultEnum.Failure;
-
-            var spell = result.Override ?? result.Original;
-
-            if (!StyxWoW.Me.KnowsSpell(spell.Id))
-                return SpellResultEnum.Failure;
-
-            var target = _target != null ? _target() : null;
-
-            switch (_spellTypeEnum)
-            {
-                case SpellTypeEnum.Buff:
-                    return Buff(target, spell);
-
-                case SpellTypeEnum.Cast:
-                    return Cast(target, spell);
-
-                case SpellTypeEnum.CastAoe:
-                    return !SimCraftCombatRoutine.UseAoe ? SpellResultEnum.Failure : Cast(target, spell);
-
-                case SpellTypeEnum.CastOnGround:
-                    return CastOnGround(target, spell);
-
-                case SpellTypeEnum.CastOnGroundAoe:
-                    return !SimCraftCombatRoutine.UseAoe ? SpellResultEnum.Failure : CastOnGround(target, spell);
-            }
-
-            return SpellResultEnum.Failure;
+            get { return _useAoe; }
+            set { _useAoe = value; }
         }
+
+        public static bool UseCooldown { get; set; }
 
         #endregion
 
         #region Public Methods
 
-        public static SpellResultEnum CanStartCasting(WoWSpell spell = null, WoWUnit target = null)
+        public static Composite Buff(string spellName, Func<object, bool> requirements)
+        {
+            return Buff(spellName, on => StyxWoW.Me, requirements);
+        }
+
+        public static Composite Buff(string spellName, Func<object, WoWUnit> target, Func<object, bool> requirements)
+        {
+            WoWUnit currentTarget;
+
+            if (target == null || target(null) == null) currentTarget = StyxWoW.Me;
+            else currentTarget = target(null);
+
+            SpellFindResults result;
+            if (UndefinedSpells.ContainsKey(spellName) || !SpellManager.FindSpell(spellName, out result))
+            {
+                AddUndefinedSpell(spellName);
+
+                return new ActionAlwaysFail();
+            }
+
+            var spell = result.Override ?? result.Original;
+            if (spell == null)
+            {
+                AddUndefinedSpell(spellName);
+
+                return new ActionAlwaysFail();
+            }
+
+            if (CanStartCasting(spell, currentTarget) == false) return new ActionAlwaysFail();
+
+            if (!SpellManager.CanBuff(spell, currentTarget)) return new ActionAlwaysFail();
+
+            if (!SpellManager.Buff(spell, currentTarget)) return new ActionAlwaysFail();
+
+            Coroutine.Wait(SimCraftCombatRoutine.Latency * 2, () => SpellManager.GlobalCooldown).Wait();
+            if (SpellManager.GlobalCooldown) PreviousGcdSpell = spell.Name;
+
+            return new ActionAlwaysSucceed();
+        }
+
+        public static Composite BuffSelf(string spellName, Func<object, bool> requirements)
+        {
+            return Buff(spellName, on => StyxWoW.Me, requirements);
+        }
+
+        public static Composite BuffSelfAndWait(string spellName, Func<object, bool> requirements)
+        {
+            return Buff(spellName, on => StyxWoW.Me, requirements);
+        }
+
+        public static bool CanStartCasting(WoWSpell spell = null, WoWUnit target = null)
         {
             if (StyxWoW.Me.IsDead)
-                return SpellResultEnum.Failure;
+                return false;
 
             if (spell != null && target != null)
             {
                 if (spell.IsMeleeSpell && !target.IsWithinMeleeRange)
-                    return SpellResultEnum.Failure;
+                    return false;
             }
 
             if (spell != null && target != null && spell.HasRange)
             {
                 if (target.Distance < spell.MinRange)
-                    return SpellResultEnum.Failure;
+                    return false;
 
                 if (target.Distance >= spell.MaxRange)
-                    return SpellResultEnum.Failure;
+                    return false;
             }
 
-            if (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds >= SimCraftCombatRoutine.Latency)
-                return SpellResultEnum.Failure;
+            if (StyxWoW.Me.CurrentCastTimeLeft.TotalMilliseconds > 0) return false;
+            if (StyxWoW.Me.CurrentChannelTimeLeft.TotalMilliseconds > 0) return false;
+            if (SpellManager.GlobalCooldownLeft.TotalMilliseconds > 0) return false;
 
-            if (StyxWoW.Me.CurrentChannelTimeLeft.TotalMilliseconds >= SimCraftCombatRoutine.Latency)
-                return SpellResultEnum.Failure;
-
-            if (SpellManager.GlobalCooldownLeft.TotalMilliseconds >= SimCraftCombatRoutine.Latency)
-                return SpellResultEnum.Failure;
-
-            return SpellResultEnum.Success;
+            return true;
         }
 
-        public static TimeSpan GetSpellCastTime(string s)
+        public static Composite Cast(string spellName, Func<object, bool> requirements)
+        {
+            return Cast(spellName, on => StyxWoW.Me.CurrentTarget, requirements);
+        }
+
+        public static Composite Cast(string spellName, Func<object, WoWUnit> target, Func<object, bool> requirements)
+        {
+            WoWUnit currentTarget;
+
+            if (target == null || target(null) == null) currentTarget = StyxWoW.Me.CurrentTarget;
+            else currentTarget = target(null);
+
+            SpellFindResults result;
+            if (UndefinedSpells.ContainsKey(spellName) || !SpellManager.FindSpell(spellName, out result))
+            {
+                AddUndefinedSpell(spellName);
+
+                return new ActionAlwaysFail();
+            }
+
+            var spell = result.Override ?? result.Original;
+            if (spell == null)
+            {
+                AddUndefinedSpell(spellName);
+
+                return new ActionAlwaysFail();
+            }
+
+            if (CanStartCasting(spell, currentTarget) == false) return new ActionAlwaysFail();
+
+            if (!SpellManager.CanCast(spell, currentTarget)) return new ActionAlwaysFail();
+
+            if (!SpellManager.Cast(spell, currentTarget)) return new ActionAlwaysFail();
+
+            Coroutine.Wait(SimCraftCombatRoutine.Latency * 2, () => SpellManager.GlobalCooldown).Wait();
+            if (SpellManager.GlobalCooldown) PreviousGcdSpell = spell.Name;
+
+            return new ActionAlwaysSucceed();
+        }
+
+        public static Composite CastOnGround(string spellName, Func<object, WoWUnit> target, Func<object, bool> requirements)
+        {
+            WoWUnit currentTarget;
+
+            if (target == null || target(null) == null) currentTarget = StyxWoW.Me.CurrentTarget;
+            else currentTarget = target(null);
+
+            SpellFindResults result;
+            if (UndefinedSpells.ContainsKey(spellName) || !SpellManager.FindSpell(spellName, out result))
+            {
+                AddUndefinedSpell(spellName);
+
+                return new ActionAlwaysFail();
+            }
+
+            var spell = result.Override ?? result.Original;
+            if (spell == null)
+            {
+                AddUndefinedSpell(spellName);
+
+                return new ActionAlwaysFail();
+            }
+
+            if (CanStartCasting(spell, currentTarget) == false) return new ActionAlwaysFail();
+
+            if (!SpellManager.CanCast(spell, currentTarget)) return new ActionAlwaysFail();
+
+            if (!SpellManager.Cast(spell, currentTarget)) return new ActionAlwaysFail();
+
+            Coroutine.Wait(SimCraftCombatRoutine.Latency * 2, () => StyxWoW.Me.CurrentPendingCursorSpell != null).Wait();
+            if (StyxWoW.Me.CurrentPendingCursorSpell == null) return new ActionAlwaysFail();
+
+            if (!SpellManager.ClickRemoteLocation(currentTarget.Location)) return new ActionAlwaysFail();
+
+            Coroutine.Wait(SimCraftCombatRoutine.Latency * 2, () => SpellManager.GlobalCooldown).Wait();
+            if (SpellManager.GlobalCooldown) PreviousGcdSpell = spell.Name;
+
+            return new ActionAlwaysSucceed();
+        }
+
+        public static TimeSpan GetSpellCastTime(string spellName)
         {
             SpellFindResults sfr;
-            if (SpellManager.FindSpell(s, out sfr))
+            if (SpellManager.FindSpell(spellName, out sfr))
             {
                 var spell = sfr.Override ?? sfr.Original;
                 return GetSpellCastTime(spell);
@@ -155,10 +207,10 @@ namespace SimcBasedCoRo.Utilities
             return TimeSpan.Zero;
         }
 
-        public static int GetSpellCharges(string s)
+        public static int GetSpellCharges(string spellName)
         {
             SpellFindResults sfr;
-            if (SpellManager.FindSpell(s, out sfr))
+            if (SpellManager.FindSpell(spellName, out sfr))
             {
                 var spell = sfr.Override ?? sfr.Original;
                 return spell.GetCharges();
@@ -167,89 +219,37 @@ namespace SimcBasedCoRo.Utilities
             return 0;
         }
 
-        public static TimeSpan GetSpellCooldown(string spell)
+        public static TimeSpan GetSpellCooldown(string spellName)
         {
-            SpellFindResults result;
-            if (SpellManager.FindSpell(spell, out result))
-                return (result.Override ?? result.Original).CooldownTimeLeft;
+            SpellFindResults sfr;
+            if (SpellManager.FindSpell(spellName, out sfr)) return (sfr.Override ?? sfr.Original).CooldownTimeLeft;
 
             return TimeSpan.MaxValue;
+        }
+
+        public static bool IsGlobalCooldown()
+        {
+            return SpellManager.GlobalCooldown;
         }
 
         #endregion
 
         #region Private Methods
 
-        private static SpellResultEnum Buff(WoWUnit target, WoWSpell spell)
+        private static void AddUndefinedSpell(string spellName)
         {
-            if (target == null)
-                target = StyxWoW.Me;
-
-            if (CanStartCasting(spell, target) == SpellResultEnum.Failure)
-                return SpellResultEnum.Failure;
-
-            if (!SpellManager.CanBuff(spell, target))
-                return SpellResultEnum.Failure;
-
-            if (!SpellManager.Buff(spell, target)) return SpellResultEnum.Failure;
-
-            Coroutine.Wait(Convert.ToInt32(SimCraftCombatRoutine.Latency) * 2, () => SpellManager.GlobalCooldown).Wait();
-            if (SpellManager.GlobalCooldown) PreviousGcdSpell = spell.Name;
-
-            return SpellResultEnum.Success;
-        }
-
-        private static SpellResultEnum Cast(WoWUnit target, WoWSpell spell)
-        {
-            if (target == null)
-                target = StyxWoW.Me.CurrentTarget;
-
-            if (CanStartCasting(spell, target) == SpellResultEnum.Failure)
-                return SpellResultEnum.Failure;
-
-            if (!SpellManager.CanCast(spell, target))
-                return SpellResultEnum.Failure;
-
-            if (!SpellManager.Cast(spell, target)) return SpellResultEnum.Failure;
-
-            Coroutine.Wait(Convert.ToInt32(SimCraftCombatRoutine.Latency) * 2, () => SpellManager.GlobalCooldown).Wait();
-            if (SpellManager.GlobalCooldown) PreviousGcdSpell = spell.Name;
-
-            return SpellResultEnum.Success;
-        }
-
-        private static SpellResultEnum CastOnGround(WoWUnit target, WoWSpell spell)
-        {
-            if (target == null)
-                target = StyxWoW.Me.CurrentTarget;
-
-            if (CanStartCasting(spell, target) == SpellResultEnum.Failure)
-                return SpellResultEnum.Failure;
-
-            if (!SpellManager.CanCast(spell, target))
-                return SpellResultEnum.Failure;
-
-            SpellManager.Cast(spell, target);
-
-            Coroutine.Wait(Convert.ToInt32(SimCraftCombatRoutine.Latency) * 5, () => StyxWoW.Me.CurrentPendingCursorSpell != null).Wait();
-            if (StyxWoW.Me.CurrentPendingCursorSpell == null) return SpellResultEnum.Failure;
-
-            if (!SpellManager.ClickRemoteLocation(target.Location))
-                return SpellResultEnum.Failure;
-
-            Coroutine.Wait(Convert.ToInt32(SimCraftCombatRoutine.Latency) * 2, () => SpellManager.GlobalCooldown).Wait();
-            if (SpellManager.GlobalCooldown) PreviousGcdSpell = spell.Name;
-
-            return SpellResultEnum.Success;
+            if (UndefinedSpells.ContainsKey(spellName))
+                UndefinedSpells[spellName] = UndefinedSpells[spellName] + 1;
+            else
+                UndefinedSpells.Add(spellName, 1);
         }
 
         private static TimeSpan GetSpellCastTime(WoWSpell spell)
         {
             if (spell == null) return TimeSpan.Zero;
 
-            var time = (int)spell.CastTime;
-            if (time == 0)
-                time = spell.BaseDuration;
+            var time = (int) spell.CastTime;
+            if (time == 0) time = spell.BaseDuration;
             return TimeSpan.FromMilliseconds(time);
         }
 

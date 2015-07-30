@@ -4,8 +4,10 @@ using SimcBasedCoRo.ClassSpecific;
 using SimcBasedCoRo.Extensions;
 using SimcBasedCoRo.Utilities;
 using Styx;
+using Styx.Common;
 using Styx.Common.Helpers;
 using Styx.CommonBot.Routines;
+using Styx.TreeSharp;
 using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 using HotkeysManager = SimcBasedCoRo.Managers.HotkeysManager;
@@ -18,33 +20,40 @@ namespace SimcBasedCoRo
     {
         #region Fields
 
-        private static readonly WaitTimer _waitForLatencyCheck = new WaitTimer(TimeSpan.FromSeconds(5));
         private static readonly WaitTimer _waitForEnemiesCheck = new WaitTimer(TimeSpan.FromMilliseconds(500));
-        private static bool _useAoe = true;
+        private static readonly WaitTimer _waitForLatencyCheck = new WaitTimer(TimeSpan.FromSeconds(5));
 
-        private ActionList _currentActionList;
+        private Composite _currentActionList;
         private WoWSpec _specialization;
 
         #endregion
 
         #region Properties
 
-        public static uint Latency { get; private set; }
         public static WoWUnit[] ActiveEnemies { get; private set; }
-
-        #region Properties
-
-        public static bool UseAoe
-        {
-            get { return _useAoe; }
-            set { _useAoe = value; }
-        }
-
-        #endregion
+        public static int Latency { get; private set; }
 
         public override WoWClass Class
         {
             get { return StyxWoW.Me.Class; }
+        }
+
+        public override void OnButtonPress()
+        {
+        }
+
+        public override Composite CombatBehavior
+        {
+            get
+            {
+                if (StyxWoW.Me.CurrentTarget == null || !StyxWoW.Me.CurrentTarget.Attackable) return null;
+
+                Specialization = StyxWoW.Me.Specialization;
+
+                if (_currentActionList != null) return _currentActionList;
+
+                return null;
+            }
         }
 
         public override string Name
@@ -63,11 +72,23 @@ namespace SimcBasedCoRo
 
                 switch (_specialization)
                 {
+                    case WoWSpec.DeathKnightBlood:
+                        _currentActionList = DeathKnight.BloodActionList();
+                        break;
+                    case WoWSpec.DeathKnightFrost:
+                        _currentActionList = DeathKnight.FrostActionList();
+                        break;
                     case WoWSpec.DeathKnightUnholy:
-                        _currentActionList = DeathKnight.UnholyActionList;
+                        _currentActionList = DeathKnight.UnholyActionList();
                         break;
                     case WoWSpec.MageArcane:
-                        _currentActionList = Mage.ArcaneActionList;
+                        _currentActionList = Mage.ArcaneActionList();
+                        break;
+                    case WoWSpec.ShamanEnhancement:
+                        _currentActionList = Shaman.EnhancementActionList();
+                        break;
+                    case WoWSpec.WarriorArms:
+                        _currentActionList = Warrior.ArmsActionList();
                         break;
                 }
             }
@@ -77,21 +98,16 @@ namespace SimcBasedCoRo
 
         #region Public Methods
 
-        public override void Combat()
+        public override void Initialize()
         {
-            if(StyxWoW.Me.CurrentTarget == null || !StyxWoW.Me.CurrentTarget.Attackable) return;
-
-            Specialization = StyxWoW.Me.Specialization;
-
-            if (_currentActionList != null)
-                _currentActionList.Run();
+            HotkeysManager.RegisterHotKeys();
         }
 
         public override void Pulse()
         {
             if (_waitForLatencyCheck.IsFinished)
             {
-                Latency = StyxWoW.WoWClient.Latency;
+                Latency = Convert.ToInt32(StyxWoW.WoWClient.Latency);
                 _waitForLatencyCheck.Reset();
             }
 
@@ -101,18 +117,18 @@ namespace SimcBasedCoRo
                 _waitForEnemiesCheck.Reset();
             }
 
-            if (StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget.Attackable)
-                StyxWoW.Me.CurrentTarget.TimeToDeath();
-        }
-
-        public override void Initialize()
-        {
-            HotkeysManager.RegisterHotKeys();
+            if (StyxWoW.Me.CurrentTarget != null && StyxWoW.Me.CurrentTarget.Attackable) StyxWoW.Me.CurrentTarget.TimeToDeath();
         }
 
         public override void ShutDown()
         {
             HotkeysManager.RemoveHotkeys();
+
+            Logging.Write("-- Listing {0} Undefined Spells Referenced --", Spell.UndefinedSpells.Count);
+            foreach (var v in Spell.UndefinedSpells)
+            {
+                Logging.Write("   {0}  {1}", v.Key.PadLeft(25), v.Value.ToString().PadLeft(7));
+            }
         }
 
         #endregion
