@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Threading;
+using Buddy.Coroutines;
 using SimcBasedCoRo.ClassSpecific;
 using SimcBasedCoRo.Extensions;
 using Styx;
@@ -193,9 +193,7 @@ namespace SimcBasedCoRo.Utilities
 
             if (!SpellManager.Buff(spell, target)) return SpellResultEnum.Failure;
 
-            if (SimCraftCombatRoutine.Latency < 800)
-                Thread.Sleep(Convert.ToInt32(SimCraftCombatRoutine.Latency + 5));
-
+            Coroutine.Wait(Convert.ToInt32(SimCraftCombatRoutine.Latency) * 2, () => SpellManager.GlobalCooldown).Wait();
             if (SpellManager.GlobalCooldown) PreviousGcdSpell = spell.Name;
 
             return SpellResultEnum.Success;
@@ -214,9 +212,7 @@ namespace SimcBasedCoRo.Utilities
 
             if (!SpellManager.Cast(spell, target)) return SpellResultEnum.Failure;
 
-            if (SimCraftCombatRoutine.Latency < 800)
-                Thread.Sleep(Convert.ToInt32(SimCraftCombatRoutine.Latency + 5));
-
+            Coroutine.Wait(Convert.ToInt32(SimCraftCombatRoutine.Latency) * 2, () => SpellManager.GlobalCooldown).Wait();
             if (SpellManager.GlobalCooldown) PreviousGcdSpell = spell.Name;
 
             return SpellResultEnum.Success;
@@ -235,16 +231,13 @@ namespace SimcBasedCoRo.Utilities
 
             SpellManager.Cast(spell, target);
 
-            //Coroutine.Wait(Convert.ToInt32(SimCraftCombatRoutine.Latency * 5), () => StyxWoW.Me.CurrentPendingCursorSpell != null).Wait();
-            while (StyxWoW.Me.CurrentPendingCursorSpell == null)
-                Thread.Sleep(10);
+            Coroutine.Wait(Convert.ToInt32(SimCraftCombatRoutine.Latency) * 5, () => StyxWoW.Me.CurrentPendingCursorSpell != null).Wait();
+            if (StyxWoW.Me.CurrentPendingCursorSpell == null) return SpellResultEnum.Failure;
 
             if (!SpellManager.ClickRemoteLocation(target.Location))
                 return SpellResultEnum.Failure;
 
-            if (SimCraftCombatRoutine.Latency < 800)
-                Thread.Sleep(Convert.ToInt32(SimCraftCombatRoutine.Latency + 5));
-
+            Coroutine.Wait(Convert.ToInt32(SimCraftCombatRoutine.Latency) * 2, () => SpellManager.GlobalCooldown).Wait();
             if (SpellManager.GlobalCooldown) PreviousGcdSpell = spell.Name;
 
             return SpellResultEnum.Success;
