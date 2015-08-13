@@ -61,6 +61,13 @@ namespace SimcBasedCoRo.Settings
         [DisplayName("Trinket 2 Usage")]
         public TrinketUsage Trinket2Usage { get; set; }
 
+        [Setting, ReadOnly(false)]
+        [DefaultValue(CheckTargets.All)]
+        [Category("Enemy Control")]
+        [DisplayName("Interrupt Targets")]
+        [Description("None: disabled, Current: our target only, All: any enemy in range.")]
+        public CheckTargets InterruptTarget { get; set; }
+
         #endregion
 
         #region Public Methods
@@ -71,6 +78,13 @@ namespace SimcBasedCoRo.Settings
         }
 
         #endregion
+    }
+
+    public enum CheckTargets
+    {
+        None = 0,
+        Current,
+        All
     }
 
     public enum TrinketUsage

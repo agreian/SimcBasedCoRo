@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows.Media;
+using CommonBehaviors.Actions;
 using SimcBasedCoRo.Extensions;
 using SimcBasedCoRo.Managers;
 using SimcBasedCoRo.Settings;
 using SimcBasedCoRo.Utilities;
 using Styx;
-using Styx.Common;
-using Styx.CommonBot;
 using Styx.TreeSharp;
 using Styx.WoWInternals.WoWObjects;
 using Action = Styx.TreeSharp.Action;
@@ -26,28 +24,25 @@ namespace SimcBasedCoRo.ClassSpecific.Common
 
         public static readonly string[] BloodlustEquivalents = {ancient_hysteria, bloodlust, time_warp};
 
-        protected static readonly Func<Func<bool>, Composite> arcane_torrent = cond => Spell.BuffSelfAndWait("Arcane Torrent", req => Spell.UseCooldown && cond());
-        protected static readonly Func<Func<bool>, Composite> berserking = cond => Spell.BuffSelfAndWait("Berserking", req => Spell.UseCooldown && cond());
-        protected static readonly Func<Func<bool>, Composite> blood_fury = cond => Spell.BuffSelfAndWait("Blood Fury", req => Spell.UseCooldown && cond());
+        protected static readonly Func<Func<bool>, Composite> arcane_torrent = cond => Spell.BuffSelfAndWait("Arcane Torrent", req => Spell.UseCooldown && cond(), gcd: HasGcd.No);
+        protected static readonly Func<Func<bool>, Composite> berserking = cond => Spell.BuffSelfAndWait("Berserking", req => Spell.UseCooldown && cond(), gcd: HasGcd.No);
+        protected static readonly Func<Func<bool>, Composite> blood_fury = cond => Spell.BuffSelfAndWait("Blood Fury", req => Spell.UseCooldown && cond(), gcd: HasGcd.No);
 
         protected static readonly Func<Composite> use_trinket = () =>
         {
-            if (SimcBasedCoRoSettings.Instance.Trinket1Usage == TrinketUsage.Never &&
-                SimcBasedCoRoSettings.Instance.Trinket2Usage == TrinketUsage.Never)
+            if (SimcBasedCoRoSettings.Instance.Trinket1Usage == TrinketUsage.Never && SimcBasedCoRoSettings.Instance.Trinket2Usage == TrinketUsage.Never)
             {
                 return new Action(ret => RunStatus.Failure);
             }
 
-            var ps = new PrioritySelector();
-
             if (SimcBasedCoRoSettings.IsTrinketUsageWanted(TrinketUsage.OnCooldownInCombat))
             {
-                ps.AddChild(new Decorator(
-                    ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget() && ((StyxWoW.Me.IsMelee() && StyxWoW.Me.CurrentTarget.IsWithinMeleeRange) || StyxWoW.Me.CurrentTarget.SpellDistance() < 40),
-                    Item.UseEquippedTrinket(TrinketUsage.OnCooldownInCombat)));
+                return new Decorator(
+                    ret => StyxWoW.Me.Combat && StyxWoW.Me.GotTarget() && ((StyxWoW.Me.IsMelee() && StyxWoW.Me.CurrentTarget.IsWithinMeleeRange) || StyxWoW.Me.CurrentTarget.SpellDistance() < 40) && Spell.UseCooldown,
+                    Item.UseEquippedTrinket(TrinketUsage.OnCooldownInCombat));
             }
 
-            return ps;
+            return new Action(ret => RunStatus.Failure);
         };
 
         private static readonly Dictionary<WoWClass, uint> T18ClassTrinketIds = new Dictionary<WoWClass, uint>
@@ -67,6 +62,8 @@ namespace SimcBasedCoRo.ClassSpecific.Common
 
         private static readonly WoWItemWeaponClass[] _oneHandWeaponClasses = {WoWItemWeaponClass.Axe, WoWItemWeaponClass.Mace, WoWItemWeaponClass.Sword, WoWItemWeaponClass.Dagger, WoWItemWeaponClass.Fist};
         private static double? _baseGcd;
+
+        private static WoWUnit _unitInterrupt;
 
         #endregion
 
@@ -108,38 +105,17 @@ namespace SimcBasedCoRo.ClassSpecific.Common
 
         protected static int active_enemies
         {
-            get { return Spell.UseAoe ? active_enemies_list.Count() : 1; }
-        }
-
-        protected static IEnumerable<WoWUnit> active_enemies_list
-        {
-            get
-            {
-                var distance = 40;
-
-                switch (StyxWoW.Me.Specialization)
-                {
-                    case WoWSpec.DeathKnightUnholy:
-                    case WoWSpec.DeathKnightFrost:
-                        distance = TalentManager.HasGlyph(DeathKnight.DkSpells.blood_boil) ? 15 : 10;
-                        break;
-                    case WoWSpec.DeathKnightBlood:
-                        distance = 20;
-                        break;
-                }
-
-                return SimCraftCombatRoutine.ActiveEnemies.Where(u => u.Distance <= distance);
-            }
+            get { return Spell.UseAoe ? SimCraftCombatRoutine.ActiveEnemies.Count() : 1; }
         }
 
         protected static double gcd
         {
-            get { return SpellManager.GlobalCooldownLeft.TotalSeconds; }
+            get { return gcd_max; }
         }
 
         protected static string prev_gcd
         {
-            get { return Spell.PreviousGcdSpell; }
+            get { return Spell.LastSpellCast; }
         }
 
 
@@ -168,21 +144,228 @@ namespace SimcBasedCoRo.ClassSpecific.Common
 
         #endregion
 
+        #region Public Methods
+
+        public static Composite auto_kick()
+        {
+            if (SimcBasedCoRoSettings.Instance.InterruptTarget == CheckTargets.None)
+                return new ActionAlwaysFail();
+
+            Composite actionSelectTarget;
+            if (SimcBasedCoRoSettings.Instance.InterruptTarget == CheckTargets.Current)
+                actionSelectTarget = new Action(
+                    ret =>
+                    {
+                        _unitInterrupt = null;
+                        //if (Me.Class == WoWClass.Shaman && Shaman.Totems.Exist(WoWTotem.Grounding))
+                        //    return RunStatus.Failure;
+
+                        WoWUnit u = Me.CurrentTarget;
+                        _unitInterrupt = IsInterruptTarget(u) ? u : null;
+
+                        return _unitInterrupt == null ? RunStatus.Failure : RunStatus.Success;
+                    }
+                    );
+            else // if ( SingularSettings.Instance.InterruptTarget == InterruptType.All )
+            {
+                actionSelectTarget = new Action(
+                    ret =>
+                    {
+                        _unitInterrupt = null;
+                        //if (Me.Class == WoWClass.Shaman && Shaman.Totems.Exist(WoWTotem.Grounding))
+                        //    return RunStatus.Failure;
+
+                        _unitInterrupt = SimCraftCombatRoutine.ActiveEnemies.Where(IsInterruptTarget).OrderBy(u => u.Distance).FirstOrDefault();
+
+                        return _unitInterrupt == null ? RunStatus.Failure : RunStatus.Success;
+                    }
+                    );
+            }
+
+            var prioSpell = new PrioritySelector();
+
+            #region Pet Spells First!
+
+            if (Me.Class == WoWClass.Warlock)
+            {
+                // this will be either a Optical Blast or Spell Lock
+                prioSpell.AddChild(Spell.Cast("Command Demon", on => _unitInterrupt,
+                    ret => _unitInterrupt != null && _unitInterrupt.Distance < 40 && (Warlock.GetCurrentPet() == Warlock.WarlockPet.Felhunter || Warlock.GetCurrentPet() == Warlock.WarlockPet.Doomguard)));
+            }
+
+            #endregion
+
+            #region Melee Range
+
+            if (Me.Class == WoWClass.Paladin)
+                prioSpell.AddChild(Spell.Cast("Rebuke", ctx => _unitInterrupt));
+
+            if (Me.Class == WoWClass.Rogue)
+            {
+                prioSpell.AddChild(Spell.Cast("Kick", ctx => _unitInterrupt));
+                prioSpell.AddChild(TalentManager.HasGlyph("Gouge")
+                    ? Spell.Cast("Gouge", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && Me.IsSafelyFacing(_unitInterrupt, 150f))
+                    : Spell.Cast("Gouge", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && Me.IsSafelyFacing(_unitInterrupt, 150f) && _unitInterrupt.IsSafelyFacing(Me, 150f)));
+            }
+
+            if (Me.Class == WoWClass.Warrior)
+                prioSpell.AddChild(Spell.Cast("Pummel", ctx => _unitInterrupt));
+
+            if (Me.Class == WoWClass.Monk)
+                prioSpell.AddChild(Spell.Cast("Spear Hand Strike", ctx => _unitInterrupt));
+
+            if (Me.Class == WoWClass.Druid)
+            {
+                // Spell.Cast("Skull Bash (Cat)", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat));
+                // Spell.Cast("Skull Bash (Bear)", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Bear));
+                prioSpell.AddChild(Spell.Cast("Skull Bash", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Bear || StyxWoW.Me.Shapeshift == ShapeshiftForm.Cat));
+                prioSpell.AddChild(Spell.Cast("Mighty Bash", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss() && _unitInterrupt.IsWithinMeleeRange));
+            }
+
+            if (Me.Class == WoWClass.DeathKnight)
+                prioSpell.AddChild(Spell.Cast("Mind Freeze", ctx => _unitInterrupt));
+
+            if (Me.Race == WoWRace.Pandaren)
+                prioSpell.AddChild(Spell.Cast("Quaking Palm", ctx => _unitInterrupt));
+
+            #endregion
+
+            #region 8 Yard Range
+
+            if (Me.Race == WoWRace.BloodElf)
+                prioSpell.AddChild(Spell.Cast("Arcane Torrent", ctx => _unitInterrupt, req => _unitInterrupt.Distance < 8 && !SimCraftCombatRoutine.ActiveEnemies.Any(u => u.IsSensitiveDamage(8))));
+
+            if (Me.Race == WoWRace.Tauren)
+                prioSpell.AddChild(Spell.Cast("War Stomp", ctx => _unitInterrupt, ret => _unitInterrupt.Distance < 8 && !_unitInterrupt.IsBoss() && !SimCraftCombatRoutine.ActiveEnemies.Any(u => u.IsSensitiveDamage(8))));
+
+            #endregion
+
+            #region 10 Yards
+
+            if (Me.Class == WoWClass.Paladin)
+                prioSpell.AddChild(Spell.Cast("Hammer of Justice", ctx => _unitInterrupt));
+
+            if (Me.Specialization == WoWSpec.DruidBalance)
+                prioSpell.AddChild(Spell.Cast("Hammer of Justice", ctx => _unitInterrupt));
+
+            if (Me.Class == WoWClass.Warrior)
+                prioSpell.AddChild(Spell.Cast("Disrupting Shout", ctx => _unitInterrupt));
+
+            #endregion
+
+            #region 25 yards
+
+            if (Me.Class == WoWClass.Shaman)
+                prioSpell.AddChild(Spell.Cast("Wind Shear", ctx => _unitInterrupt, req => Me.IsSafelyFacing(_unitInterrupt)));
+
+            #endregion
+
+            #region 30 yards
+
+            // Druid
+            if (TalentManager.HasGlyph("Fae Silence"))
+                prioSpell.AddChild(Spell.Cast("Faerie Fire", ctx => _unitInterrupt, req => Me.Shapeshift == ShapeshiftForm.Bear));
+
+            if (Me.Specialization == WoWSpec.PaladinProtection)
+                prioSpell.AddChild(Spell.Cast("Avenger's Shield", ctx => _unitInterrupt));
+
+            if (Me.Class == WoWClass.Warrior && TalentManager.HasGlyph("Gag Order"))
+                // Gag Order only works on non-bosses due to it being a silence, not an interrupt!
+                prioSpell.AddChild(Spell.Cast("Heroic Throw", ctx => _unitInterrupt, ret => !_unitInterrupt.IsBoss()));
+
+            if (Me.Class == WoWClass.Priest)
+                prioSpell.AddChild(Spell.Cast("Silence", ctx => _unitInterrupt));
+
+            if (Me.Class == WoWClass.DeathKnight && Me.CurrentTarget != null && Me.CurrentTarget.IsPlayer && Me.CurrentTarget.IsAggressive())
+                prioSpell.AddChild(Spell.Cast("Strangulate", ctx => _unitInterrupt));
+
+            if (Me.Class == WoWClass.Mage)
+                prioSpell.AddChild(Spell.Cast("Frostjaw", ctx => _unitInterrupt));
+
+            #endregion
+
+            #region 40 yards
+
+            if (Me.Class == WoWClass.Mage)
+                prioSpell.AddChild(Spell.Cast("Counterspell", ctx => _unitInterrupt));
+
+            if (Me.Class == WoWClass.Hunter)
+                prioSpell.AddChild(Spell.Cast("Counter Shot", ctx => _unitInterrupt));
+
+            if (Me.Specialization == WoWSpec.HunterMarksmanship)
+                prioSpell.AddChild(Spell.Cast("Silencing Shot", ctx => _unitInterrupt));
+
+            if (Me.Class == WoWClass.Druid)
+                prioSpell.AddChild(Spell.Cast("Solar Beam", ctx => _unitInterrupt, ret => StyxWoW.Me.Shapeshift == ShapeshiftForm.Moonkin));
+
+            if (Me.Specialization == WoWSpec.ShamanElemental || Me.Specialization == WoWSpec.ShamanEnhancement)
+                prioSpell.AddChild(Spell.Cast("Solar Beam", ctx => _unitInterrupt, ret => true));
+
+            #endregion
+
+            return new ThrottlePasses(2, TimeSpan.FromMilliseconds(500),
+                new Decorator(
+                    req => Spell.UseAutoKick,
+                    new Sequence(
+                        actionSelectTarget,
+                        // majority of these are off GCD, so throttle all to avoid most fail messages
+                        prioSpell
+                        )
+                    ));
+        }
+
+        #endregion
+
         #region Private Methods
 
         protected static IOrderedEnumerable<WoWUnit> Enemies(byte distance)
         {
-            return active_enemies_list.Where(x => x.Distance <= distance).OrderBy(x => x.Distance);
+            return SimCraftCombatRoutine.ActiveEnemies.Where(x => x.Distance <= distance).OrderBy(x => x.Distance);
         }
 
         protected static int EnemiesCountNearTarget(WoWUnit target, byte distance)
         {
-            return active_enemies_list.Where(x => target != x).Count(x => target.Location.Distance(x.Location) <= distance);
+            return SimCraftCombatRoutine.ActiveEnemies.Where(x => target != x).Count(x => target.Location.Distance(x.Location) <= distance);
         }
 
         protected static int time_to_die(WoWUnit target, int indeterminateValue)
         {
             return target.TimeToDeath(indeterminateValue);
+        }
+
+        private static bool IsInterruptTarget(WoWUnit u)
+        {
+            if (u == null || !u.IsCasting)
+                return false;
+
+            if (!u.CanInterruptCurrentSpellCast)
+            {
+                //if (!SingularSettings.Debug)
+                //    Logger.WriteDebug("IsInterruptTarget: {0} casting {1} but CanInterruptCurrentSpellCast == false", u.SafeName(), (u.CastingSpell == null ? "(null)" : u.CastingSpell.Name));
+                return false;
+            }
+
+            if (!u.InLineOfSpellSight)
+            {
+                //if (!SingularSettings.Debug)
+                //    Logger.WriteDebug("IsInterruptTarget: {0} casting {1} but LoSS == false", u.SafeName(), (u.CastingSpell == null ? "(null)" : u.CastingSpell.Name));
+                return false;
+            }
+
+            if (!StyxWoW.Me.IsSafelyFacing(u))
+            {
+                //if (!SingularSettings.Debug)
+                //    Logger.WriteDebug("IsInterruptTarget: {0} casting {1} but Facing == false", u.SafeName(), (u.CastingSpell == null ? "(null)" : u.CastingSpell.Name));
+                return false;
+            }
+
+            if (u.CurrentCastTimeLeft.TotalMilliseconds < 250)
+            {
+                // not worth interrupting at this point
+                return false;
+            }
+
+            return true;
         }
 
         #endregion
@@ -207,11 +390,7 @@ namespace SimcBasedCoRo.ClassSpecific.Common
 
             public static bool _1h
             {
-                get
-                {
-                    Logging.Write(Colors.SeaGreen, "Try to get main_hand._1h {0}", Me.Inventory.Equipped.MainHand != null && _oneHandWeaponClasses.Contains(Me.Inventory.Equipped.MainHand.ItemInfo.WeaponClass));
-                    return Me.Inventory.Equipped.MainHand != null && _oneHandWeaponClasses.Contains(Me.Inventory.Equipped.MainHand.ItemInfo.WeaponClass);
-                }
+                get { return Me.Inventory.Equipped.MainHand != null && _oneHandWeaponClasses.Contains(Me.Inventory.Equipped.MainHand.ItemInfo.WeaponClass); }
             }
 
             public static bool _2h

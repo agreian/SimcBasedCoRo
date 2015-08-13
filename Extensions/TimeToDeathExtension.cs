@@ -15,7 +15,7 @@ namespace SimcBasedCoRo.Extensions
     {
         #region Fields
 
-        private const double NANOSECONDS_PER_SECOND = 10000.0 * 1000.0;
+        private const double TICKS_PER_SECOND = 10000.0 * 1000.0;
         private const int SECONDS_PER_HOUR = 3600;
 
         private static readonly Dictionary<WoWGuid, UnitLifeTime> _guids = new Dictionary<WoWGuid, UnitLifeTime>();
@@ -23,7 +23,7 @@ namespace SimcBasedCoRo.Extensions
         #endregion
 
         #region Public Methods
-
+        
         /// <summary>
         /// seconds until the target dies.  first call initializes values. subsequent
         /// return estimate or indeterminateValue if death can't be calculated
@@ -33,7 +33,7 @@ namespace SimcBasedCoRo.Extensions
         /// <returns>number of seconds </returns>
         public static int TimeToDeath(this WoWUnit target, int indeterminateValue = int.MaxValue)
         {
-            if (target == null || !target.IsValid || !target.IsAlive || target.IsTrainingDummy()) return indeterminateValue;
+            if (target == null || !target.IsValid || !target.IsAlive) return indeterminateValue;
 
             // Fill variables on new target or on target switch, this will loose all calculations from last target ! Eheh no no no DarkNinjaCsharper solve this !
             if (_guids.ContainsKey(target.Guid) == false || _guids.ContainsKey(target.Guid) && (target.MaxHealth != _guids[target.Guid].MaxHealth || target.CurrentHealth > _guids[target.Guid].CurrentHealth))
@@ -41,7 +41,7 @@ namespace SimcBasedCoRo.Extensions
                 var unitLifeTime = new UnitLifeTime
                 {
                     FirstHealth = target.CurrentHealth,
-                    FirstTime = DateTime.UtcNow.TotalSeconds(),
+                    FirstTime = DateTime.Now.TotalSeconds(),
                     MaxHealth = target.MaxHealth
                 };
 
@@ -52,7 +52,7 @@ namespace SimcBasedCoRo.Extensions
             var current = _guids[target.Guid];
 
             current.CurrentHealth = target.CurrentHealth;
-            current.CurrentTime = DateTime.UtcNow.TotalSeconds();
+            current.CurrentTime = DateTime.Now.TotalSeconds();
 
             var timeDiff = current.CurrentTime - current.FirstTime;
             var hpDiff = current.FirstHealthPercent - current.CurrentHealthPercent;
@@ -85,7 +85,7 @@ namespace SimcBasedCoRo.Extensions
 
         private static double TotalSeconds(this DateTime time)
         {
-            return time.Ticks / NANOSECONDS_PER_SECOND;
+            return time.Ticks / TICKS_PER_SECOND;
         }
 
         #endregion

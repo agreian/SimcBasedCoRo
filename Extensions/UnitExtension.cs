@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Styx;
 using Styx.CommonBot;
+using Styx.WoWInternals;
 using Styx.WoWInternals.WoWObjects;
 
 namespace SimcBasedCoRo.Extensions
@@ -34,99 +35,127 @@ namespace SimcBasedCoRo.Extensions
     {
         #region Constant
 
+        #region Fields
+
         private const int BANNER_OF_THE_ALLIANCE = 61573;
         private const int BANNER_OF_THE_HORDE = 61574;
 
-        private static readonly Dictionary<string, PartyBuffType> _partyBuffs = new Dictionary<string, PartyBuffType>
+        private static readonly KeyValuePair<string, PartyBuffType>[] _listBuffs =
         {
-            {"Mark of the Wild", PartyBuffType.Stats},
-            {"Legacy of the Emperor", PartyBuffType.Stats},
-            {"Legacy of the White Tiger", PartyBuffType.Stats},
-            {"Blessing of Kings", PartyBuffType.Stats},
-            {"Blessing of Forgotten Kings", PartyBuffType.Stats},
-            {"Embrace of the Shale Spider", PartyBuffType.Stats},
-            {"Lone Wolf: Power of the Primates", PartyBuffType.Stats},
-            {"Bark of the Wild", PartyBuffType.Stats},
-            {"Blessing of Kongs", PartyBuffType.Stats},
-            {"Strength of the Earth", PartyBuffType.Stats},
-            {"Power Word: Fortitude", PartyBuffType.Stamina},
-            {"Blood Pact", PartyBuffType.Stamina},
-            {"Commanding Shout", PartyBuffType.Stamina},
-            {"Lone Wolf: Fortitude of the Bear", PartyBuffType.Stamina},
-            {"Invigorating Roar", PartyBuffType.Stamina},
-            {"Sturdiness", PartyBuffType.Stamina},
-            {"Savage Vigor", PartyBuffType.Stamina},
-            {"Fortitude", PartyBuffType.Stamina},
-            {"Qiraji Fortitude", PartyBuffType.Stamina | PartyBuffType.SpellPower},
-            {"Horn of Winter", PartyBuffType.AttackPower},
-            {"Trueshot Aura", PartyBuffType.AttackPower},
-            {"Battle Shout", PartyBuffType.AttackPower},
-            {"Arcane Brilliance", PartyBuffType.SpellPower},
-            {"Dalaran Brilliance", PartyBuffType.SpellPower},
-            {"Dark Intent", PartyBuffType.SpellPower},
-            {"Lone Wolf: Wisdom of the Serpent", PartyBuffType.SpellPower | PartyBuffType.Crit},
-            {"Still Water", PartyBuffType.SpellPower},
-            {"Serpent's Cunning", PartyBuffType.SpellPower},
-            {"Unholy Aura", PartyBuffType.Haste},
-            {"Swiftblade's Cunning", PartyBuffType.Haste | PartyBuffType.MultiStrike},
-            {"Mind Quickening", PartyBuffType.Haste},
-            {"Grace of Air", PartyBuffType.Haste},
-            {"Lone Wolf: Haste of the Hyena", PartyBuffType.Haste},
-            {"Cackling Howl", PartyBuffType.Haste},
-            {"Savage Vigor", PartyBuffType.Haste},
-            {"Energizing Spores", PartyBuffType.Haste},
-            {"Speed of the Swarm", PartyBuffType.Haste},
-            {"Leader of the Pack", PartyBuffType.Crit},
-            {"Bellowing Roar", PartyBuffType.Crit},
-            {"Legacy of the White Tiger", PartyBuffType.Crit},
-            {"Furious Howl", PartyBuffType.Crit},
-            {"Terrifying Roar", PartyBuffType.Crit},
-            {"Fearless Roar", PartyBuffType.Crit},
-            {"Arcane Brilliance", PartyBuffType.Crit},
-            {"Dalaran Brilliance", PartyBuffType.Crit},
-            {"Lone Wolf: Ferocity of the Raptor", PartyBuffType.Crit},
-            {"Terrifying Roar", PartyBuffType.Crit},
-            {"Fearless Roar", PartyBuffType.Crit},
-            {"Strength of the Pack", PartyBuffType.Crit},
-            {"Embrace of the Shale Spider", PartyBuffType.Crit},
-            {"Still Water", PartyBuffType.Crit},
-            {"Furious Howl", PartyBuffType.Crit},
-            {"Spirit Beast Blessing", PartyBuffType.Crit},
-            {"Windflurry", PartyBuffType.MultiStrike},
-            {"Mind Quickening", PartyBuffType.MultiStrike},
-            {"Swiftblade's Cunning", PartyBuffType.MultiStrike},
-            {"Dark Intent", PartyBuffType.MultiStrike},
-            {"Lone Wolf: Quickness of the Dragonhawk", PartyBuffType.MultiStrike},
-            {"Sonic Focus", PartyBuffType.MultiStrike},
-            {"Wild Strength", PartyBuffType.MultiStrike},
-            {"Double Bite", PartyBuffType.MultiStrike},
-            {"Spry Attacks", PartyBuffType.MultiStrike},
-            {"Breath of the Winds", PartyBuffType.MultiStrike},
-            {"Unholy Aura", PartyBuffType.Versatility},
-            {"Mark of the Wild", PartyBuffType.Versatility},
-            {" Sanctity Aura", PartyBuffType.Versatility},
-            {"Inspiring Presence", PartyBuffType.Versatility},
-            {"Lone Wolf: Versatility of the Ravager", PartyBuffType.Versatility},
-            {"Tenacity", PartyBuffType.Versatility},
-            {"Indomitable", PartyBuffType.Versatility},
-            {"Wild Strength", PartyBuffType.Versatility},
-            {"Defensive Quills", PartyBuffType.Versatility},
-            {"Chitinous Armor", PartyBuffType.Versatility},
-            {"Grace", PartyBuffType.Versatility},
-            {"Strength of the Earth", PartyBuffType.Versatility},
-            {"Blessing of Might", PartyBuffType.Mastery},
-            {"Grace of Air", PartyBuffType.Mastery},
-            {"Roar of Courage", PartyBuffType.Mastery},
-            {"Power of the Grave", PartyBuffType.Mastery},
-            {"Moonkin Aura", PartyBuffType.Mastery},
-            {"Blessing of Might", PartyBuffType.Mastery},
-            {"Grace of Air", PartyBuffType.Mastery},
-            {"Lone Wolf: Grace of the Cat", PartyBuffType.Mastery},
-            {"Roar of Courage", PartyBuffType.Mastery},
-            {"Keen Senses", PartyBuffType.Mastery},
-            {"Spirit Beast Blessing", PartyBuffType.Mastery},
-            {"Plainswalking", PartyBuffType.Mastery}
+            new KeyValuePair<string, PartyBuffType>("Mark of the Wild", PartyBuffType.Stats),
+            new KeyValuePair<string, PartyBuffType>("Legacy of the Emperor", PartyBuffType.Stats),
+            new KeyValuePair<string, PartyBuffType>("Legacy of the White Tiger", PartyBuffType.Stats),
+            new KeyValuePair<string, PartyBuffType>("Blessing of Kings", PartyBuffType.Stats),
+            new KeyValuePair<string, PartyBuffType>("Blessing of Forgotten Kings", PartyBuffType.Stats),
+            new KeyValuePair<string, PartyBuffType>("Embrace of the Shale Spider", PartyBuffType.Stats),
+            new KeyValuePair<string, PartyBuffType>("Lone Wolf: Power of the Primates", PartyBuffType.Stats),
+            new KeyValuePair<string, PartyBuffType>("Bark of the Wild", PartyBuffType.Stats),
+            new KeyValuePair<string, PartyBuffType>("Blessing of Kongs", PartyBuffType.Stats),
+            new KeyValuePair<string, PartyBuffType>("Strength of the Earth", PartyBuffType.Stats),
+            new KeyValuePair<string, PartyBuffType>("Power Word: Fortitude", PartyBuffType.Stamina),
+            new KeyValuePair<string, PartyBuffType>("Blood Pact", PartyBuffType.Stamina),
+            new KeyValuePair<string, PartyBuffType>("Commanding Shout", PartyBuffType.Stamina),
+            new KeyValuePair<string, PartyBuffType>("Lone Wolf: Fortitude of the Bear", PartyBuffType.Stamina),
+            new KeyValuePair<string, PartyBuffType>("Invigorating Roar", PartyBuffType.Stamina),
+            new KeyValuePair<string, PartyBuffType>("Sturdiness", PartyBuffType.Stamina),
+            new KeyValuePair<string, PartyBuffType>("Savage Vigor", PartyBuffType.Stamina),
+            new KeyValuePair<string, PartyBuffType>("Fortitude", PartyBuffType.Stamina),
+            new KeyValuePair<string, PartyBuffType>("Qiraji Fortitude", PartyBuffType.Stamina | PartyBuffType.SpellPower),
+            new KeyValuePair<string, PartyBuffType>("Horn of Winter", PartyBuffType.AttackPower),
+            new KeyValuePair<string, PartyBuffType>("Trueshot Aura", PartyBuffType.AttackPower),
+            new KeyValuePair<string, PartyBuffType>("Battle Shout", PartyBuffType.AttackPower),
+            new KeyValuePair<string, PartyBuffType>("Arcane Brilliance", PartyBuffType.SpellPower),
+            new KeyValuePair<string, PartyBuffType>("Dalaran Brilliance", PartyBuffType.SpellPower),
+            new KeyValuePair<string, PartyBuffType>("Dark Intent", PartyBuffType.SpellPower),
+            new KeyValuePair<string, PartyBuffType>("Lone Wolf: Wisdom of the Serpent", PartyBuffType.SpellPower | PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Still Water", PartyBuffType.SpellPower),
+            new KeyValuePair<string, PartyBuffType>("Serpent's Cunning", PartyBuffType.SpellPower),
+            new KeyValuePair<string, PartyBuffType>("Unholy Aura", PartyBuffType.Haste),
+            new KeyValuePair<string, PartyBuffType>("Swiftblade's Cunning", PartyBuffType.Haste | PartyBuffType.MultiStrike),
+            new KeyValuePair<string, PartyBuffType>("Mind Quickening", PartyBuffType.Haste),
+            new KeyValuePair<string, PartyBuffType>("Grace of Air", PartyBuffType.Haste),
+            new KeyValuePair<string, PartyBuffType>("Lone Wolf: Haste of the Hyena", PartyBuffType.Haste),
+            new KeyValuePair<string, PartyBuffType>("Cackling Howl", PartyBuffType.Haste),
+            new KeyValuePair<string, PartyBuffType>("Savage Vigor", PartyBuffType.Haste),
+            new KeyValuePair<string, PartyBuffType>("Energizing Spores", PartyBuffType.Haste),
+            new KeyValuePair<string, PartyBuffType>("Speed of the Swarm", PartyBuffType.Haste),
+            new KeyValuePair<string, PartyBuffType>("Leader of the Pack", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Bellowing Roar", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Legacy of the White Tiger", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Furious Howl", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Terrifying Roar", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Fearless Roar", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Arcane Brilliance", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Dalaran Brilliance", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Lone Wolf: Ferocity of the Raptor", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Terrifying Roar", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Fearless Roar", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Strength of the Pack", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Embrace of the Shale Spider", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Still Water", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Furious Howl", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Spirit Beast Blessing", PartyBuffType.Crit),
+            new KeyValuePair<string, PartyBuffType>("Windflurry", PartyBuffType.MultiStrike),
+            new KeyValuePair<string, PartyBuffType>("Mind Quickening", PartyBuffType.MultiStrike),
+            new KeyValuePair<string, PartyBuffType>("Swiftblade's Cunning", PartyBuffType.MultiStrike),
+            new KeyValuePair<string, PartyBuffType>("Dark Intent", PartyBuffType.MultiStrike),
+            new KeyValuePair<string, PartyBuffType>("Lone Wolf: Quickness of the Dragonhawk", PartyBuffType.MultiStrike),
+            new KeyValuePair<string, PartyBuffType>("Sonic Focus", PartyBuffType.MultiStrike),
+            new KeyValuePair<string, PartyBuffType>("Wild Strength", PartyBuffType.MultiStrike),
+            new KeyValuePair<string, PartyBuffType>("Double Bite", PartyBuffType.MultiStrike),
+            new KeyValuePair<string, PartyBuffType>("Spry Attacks", PartyBuffType.MultiStrike),
+            new KeyValuePair<string, PartyBuffType>("Breath of the Winds", PartyBuffType.MultiStrike),
+            new KeyValuePair<string, PartyBuffType>("Unholy Aura", PartyBuffType.Versatility),
+            new KeyValuePair<string, PartyBuffType>("Mark of the Wild", PartyBuffType.Versatility),
+            new KeyValuePair<string, PartyBuffType>(" Sanctity Aura", PartyBuffType.Versatility),
+            new KeyValuePair<string, PartyBuffType>("Inspiring Presence", PartyBuffType.Versatility),
+            new KeyValuePair<string, PartyBuffType>("Lone Wolf: Versatility of the Ravager", PartyBuffType.Versatility),
+            new KeyValuePair<string, PartyBuffType>("Tenacity", PartyBuffType.Versatility),
+            new KeyValuePair<string, PartyBuffType>("Indomitable", PartyBuffType.Versatility),
+            new KeyValuePair<string, PartyBuffType>("Wild Strength", PartyBuffType.Versatility),
+            new KeyValuePair<string, PartyBuffType>("Defensive Quills", PartyBuffType.Versatility),
+            new KeyValuePair<string, PartyBuffType>("Chitinous Armor", PartyBuffType.Versatility),
+            new KeyValuePair<string, PartyBuffType>("Grace", PartyBuffType.Versatility),
+            new KeyValuePair<string, PartyBuffType>("Strength of the Earth", PartyBuffType.Versatility),
+            new KeyValuePair<string, PartyBuffType>("Blessing of Might", PartyBuffType.Mastery),
+            new KeyValuePair<string, PartyBuffType>("Grace of Air", PartyBuffType.Mastery),
+            new KeyValuePair<string, PartyBuffType>("Roar of Courage", PartyBuffType.Mastery),
+            new KeyValuePair<string, PartyBuffType>("Power of the Grave", PartyBuffType.Mastery),
+            new KeyValuePair<string, PartyBuffType>("Moonkin Aura", PartyBuffType.Mastery),
+            new KeyValuePair<string, PartyBuffType>("Blessing of Might", PartyBuffType.Mastery),
+            new KeyValuePair<string, PartyBuffType>("Grace of Air", PartyBuffType.Mastery),
+            new KeyValuePair<string, PartyBuffType>("Lone Wolf: Grace of the Cat", PartyBuffType.Mastery),
+            new KeyValuePair<string, PartyBuffType>("Roar of Courage", PartyBuffType.Mastery),
+            new KeyValuePair<string, PartyBuffType>("Keen Senses", PartyBuffType.Mastery),
+            new KeyValuePair<string, PartyBuffType>("Spirit Beast Blessing", PartyBuffType.Mastery),
+            new KeyValuePair<string, PartyBuffType>("Plainswalking", PartyBuffType.Mastery)
         };
+
+        private static readonly Dictionary<string, PartyBuffType> _partyBuffs = new Dictionary<string, PartyBuffType>();
+
+        #endregion
+
+        #region Constructors
+
+        static UnitExtension()
+        {
+            foreach (var t in _listBuffs)
+            {
+                if (_partyBuffs.ContainsKey(t.Key))
+                    _partyBuffs[t.Key] |= t.Value;
+                else
+                    _partyBuffs.Add(t.Key, t.Value);
+            }
+        }
+
+        #endregion
+
+        #endregion
+
+        #region Fields
+
+        private static WoWGuid _lastIsBossGuid;
+        private static bool _lastIsBossResult;
 
         #endregion
 
@@ -248,6 +277,12 @@ namespace SimcBasedCoRo.Extensions
             return false;
         }
 
+        public static bool HasAuraWithEffect(this WoWUnit unit, params WoWApplyAuraType[] applyType)
+        {
+            var hashes = new HashSet<WoWApplyAuraType>(applyType);
+            return unit.Auras.Values.Any(a => a.Spell != null && a.Spell.SpellEffects.Any(se => hashes.Contains(se.AuraType)));
+        }
+
         /// <summary>
         /// aura considered expired if aura not present or less than specified time remaining.  
         /// differs from HasAuraExpired since it assumes you have learned the spell which applies it already
@@ -286,6 +321,39 @@ namespace SimcBasedCoRo.Extensions
         public static bool IsAggressive(this WoWUnit u)
         {
             return u.Combat && (u.IsTargetingMeOrPet || u.IsTargetingAnyMinion || u.IsTargetingMyPartyMember || u.IsTargetingMyRaidMember);
+        }
+
+        public static bool IsBoss(this WoWUnit unit)
+        {
+            if (unit == null) return false;
+
+            var guid = unit.Guid;
+            if (guid == _lastIsBossGuid)
+                return _lastIsBossResult;
+
+            _lastIsBossGuid = guid;
+            _lastIsBossResult = unit.IsBoss;
+
+            if (!_lastIsBossResult)
+                _lastIsBossResult = IsTrainingDummy(unit);
+            return _lastIsBossResult;
+        }
+
+        public static bool IsCrowdControlled(this WoWUnit unit)
+        {
+            return unit.Stunned
+                   || unit.Rooted
+                   || unit.Fleeing
+                   || unit.HasAuraWithEffect(
+                       WoWApplyAuraType.ModConfuse,
+                       WoWApplyAuraType.ModCharm,
+                       WoWApplyAuraType.ModFear,
+                       WoWApplyAuraType.ModPacify,
+                       WoWApplyAuraType.ModPacifySilence,
+                       WoWApplyAuraType.ModPossess,
+                       WoWApplyAuraType.ModRoot,
+                       WoWApplyAuraType.ModStun
+                       );
         }
 
         /// <summary>
@@ -329,6 +397,25 @@ namespace SimcBasedCoRo.Extensions
             }
 
             return false;
+        }
+
+        public static bool IsNeutral(this WoWUnit unit)
+        {
+            return unit.GetReactionTowards(StyxWoW.Me) == WoWUnitReaction.Neutral;
+        }
+
+        public static bool IsSensitiveDamage(this WoWUnit u, int range = 0)
+        {
+            if (u.Guid == StyxWoW.Me.CurrentTargetGuid)
+                return false;
+
+            if (!u.Combat && !u.IsPlayer && u.IsNeutral())
+                return true;
+
+            if (range > 0 && u.SpellDistance() > range)
+                return false;
+
+            return u.IsCrowdControlled();
         }
 
         public static bool IsTrainingDummy(this WoWUnit unit)

@@ -63,17 +63,22 @@ namespace SimcBasedCoRo.ClassSpecific
 
         public static Composite EnhancementActionList()
         {
-            return new PrioritySelector(
-                new Decorator(ret => !Spell.IsGlobalCooldown(), new PrioritySelector(
-                    use_trinket(),
-                    new ActionAlwaysFail()
-                    )));
+            return new Decorator(ret => !Spell.IsGlobalCooldown(), new PrioritySelector(
+                auto_kick(),
+                use_trinket(),
+                new ActionAlwaysFail()
+                ));
+        }
+
+        public static Composite EnhancementInstancePull()
+        {
+            return EnhancementActionList();
         }
 
         #endregion
 
         #region Types
-
+        
         private static class ShamanSpells
         {
             #region Fields

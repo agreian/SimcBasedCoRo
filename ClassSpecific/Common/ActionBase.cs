@@ -21,7 +21,7 @@ namespace SimcBasedCoRo.ClassSpecific.Common
 
         public int charges
         {
-            get { return Spell.GetSpellCharges(SpellName); }
+            get { return Spell.GetCharges(SpellName); }
         }
 
         public double execute_time

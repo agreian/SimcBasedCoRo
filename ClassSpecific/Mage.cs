@@ -37,7 +37,7 @@ namespace SimcBasedCoRo.ClassSpecific
         private static readonly Func<Func<bool>, Composite> mirror_image = cond => Spell.BuffSelf(MageSpells.mirror_image, req => Spell.UseCooldown && talent.mirror_image.enabled && cond());
 
         private static readonly Func<Func<bool>, Composite> nether_tempest =
-            cond => Spell.Buff(MageSpells.nether_tempest, on => NetherTempestTarget, req => Spell.UseAoe && talent.nether_tempest.enabled && EnemiesCountNearTarget(NetherTempestTarget, NETHER_TEMPEST_DISTANCE) >= 2 && cond());
+            cond => Spell.Buff(MageSpells.nether_tempest, 1, on => NetherTempestTarget, req => Spell.UseAoe && talent.nether_tempest.enabled && EnemiesCountNearTarget(NetherTempestTarget, NETHER_TEMPEST_DISTANCE) >= 2 && cond());
 
         private static readonly Func<Func<bool>, Composite> presence_of_mind = cond => Spell.BuffSelf(MageSpells.presence_of_mind, req => Spell.UseCooldown && cond());
         private static readonly Func<Func<bool>, Composite> rune_of_power = cond => Spell.CastOnGround(MageSpells.rune_of_power, on => Me, req => talent.rune_of_power.enabled && cond());
@@ -96,14 +96,14 @@ namespace SimcBasedCoRo.ClassSpecific
 
         public static WoWUnit NetherTempestTarget
         {
-            get { return active_enemies_list.OrderByDescending(x => EnemiesCountNearTarget(x, NETHER_TEMPEST_DISTANCE)).FirstOrDefault(); }
+            get { return SimCraftCombatRoutine.ActiveEnemies.OrderByDescending(x => EnemiesCountNearTarget(x, NETHER_TEMPEST_DISTANCE)).FirstOrDefault(); }
         }
 
         public static WoWUnit SupernovaTarget
         {
             get
             {
-                var units = active_enemies_list.ToList();
+                var units = SimCraftCombatRoutine.ActiveEnemies.ToList();
                 if (Me.GroupInfo.IsInParty) units.AddRange(Me.GroupInfo.RaidMembers.Where(x => x != null).Select(x => x.ToPlayer()).Where(x => x != null));
                 if (!units.Contains(Me)) units.Add(Me);
 
@@ -117,8 +117,9 @@ namespace SimcBasedCoRo.ClassSpecific
 
         public static Composite ArcaneActionList()
         {
-            return new PrioritySelector(
-                new Decorator(ret => !Spell.IsGlobalCooldown(), new PrioritySelector(
+            return new Decorator(ret => !Spell.IsGlobalCooldown(),
+                new PrioritySelector(
+                    auto_kick(),
                     use_trinket(),
                     //actions=counterspell,if=target.debuff.casting.react
                     //actions+=/stop_burn_phase,if=prev_gcd.evocation&burn_phase_duration>gcd.max
@@ -140,7 +141,7 @@ namespace SimcBasedCoRo.ClassSpecific
                     //actions+=/call_action_list,name=conserve
                     new Decorator(arcane_conserve()),
                     new ActionAlwaysFail()
-                    )));
+                    ));
         }
 
         public static Composite Buffs()

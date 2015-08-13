@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using SimcBasedCoRo.ClassSpecific;
 using SimcBasedCoRo.Extensions;
@@ -23,7 +24,7 @@ namespace SimcBasedCoRo
         private static readonly WaitTimer _waitForEnemiesCheck = new WaitTimer(TimeSpan.FromMilliseconds(500));
         private static readonly WaitTimer _waitForLatencyCheck = new WaitTimer(TimeSpan.FromSeconds(5));
 
-        private Composite _currentActionList;
+        private Composite _combatBehavior;
         private WoWSpec _specialization;
 
         #endregion
@@ -46,11 +47,9 @@ namespace SimcBasedCoRo
         {
             get
             {
-                if (StyxWoW.Me.CurrentTarget == null || !StyxWoW.Me.CurrentTarget.Attackable) return null;
-
                 Specialization = StyxWoW.Me.Specialization;
 
-                if (_currentActionList != null) return _currentActionList;
+                if (_combatBehavior != null) return _combatBehavior;
 
                 return null;
             }
@@ -73,22 +72,22 @@ namespace SimcBasedCoRo
                 switch (_specialization)
                 {
                     case WoWSpec.DeathKnightBlood:
-                        _currentActionList = DeathKnight.BloodActionList();
+                        _combatBehavior = DeathKnight.BloodActionList();
                         break;
                     case WoWSpec.DeathKnightFrost:
-                        _currentActionList = DeathKnight.FrostActionList();
+                        _combatBehavior = DeathKnight.FrostActionList();
                         break;
                     case WoWSpec.DeathKnightUnholy:
-                        _currentActionList = DeathKnight.UnholyActionList();
+                        _combatBehavior = DeathKnight.UnholyActionList();
                         break;
                     case WoWSpec.MageArcane:
-                        _currentActionList = Mage.ArcaneActionList();
+                        _combatBehavior = Mage.ArcaneActionList();
                         break;
                     case WoWSpec.ShamanEnhancement:
-                        _currentActionList = Shaman.EnhancementActionList();
+                        _combatBehavior = Shaman.EnhancementActionList();
                         break;
                     case WoWSpec.WarriorArms:
-                        _currentActionList = Warrior.ArmsActionList();
+                        _combatBehavior = Warrior.ArmsActionList();
                         break;
                 }
             }
@@ -127,7 +126,7 @@ namespace SimcBasedCoRo
             Logging.Write("-- Listing {0} Undefined Spells Referenced --", Spell.UndefinedSpells.Count);
             foreach (var v in Spell.UndefinedSpells)
             {
-                Logging.Write("   {0}  {1}", v.Key.PadLeft(25), v.Value.ToString().PadLeft(7));
+                Logging.Write("   {0}  {1}", v.Key.PadLeft(25), v.Value.ToString(CultureInfo.InvariantCulture).PadLeft(7));
             }
         }
 
