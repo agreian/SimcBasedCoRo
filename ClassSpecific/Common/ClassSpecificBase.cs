@@ -340,22 +340,16 @@ namespace SimcBasedCoRo.ClassSpecific.Common
 
             if (!u.CanInterruptCurrentSpellCast)
             {
-                //if (!SingularSettings.Debug)
-                //    Logger.WriteDebug("IsInterruptTarget: {0} casting {1} but CanInterruptCurrentSpellCast == false", u.SafeName(), (u.CastingSpell == null ? "(null)" : u.CastingSpell.Name));
                 return false;
             }
 
             if (!u.InLineOfSpellSight)
             {
-                //if (!SingularSettings.Debug)
-                //    Logger.WriteDebug("IsInterruptTarget: {0} casting {1} but LoSS == false", u.SafeName(), (u.CastingSpell == null ? "(null)" : u.CastingSpell.Name));
                 return false;
             }
 
             if (!StyxWoW.Me.IsSafelyFacing(u))
             {
-                //if (!SingularSettings.Debug)
-                //    Logger.WriteDebug("IsInterruptTarget: {0} casting {1} but Facing == false", u.SafeName(), (u.CastingSpell == null ? "(null)" : u.CastingSpell.Name));
                 return false;
             }
 

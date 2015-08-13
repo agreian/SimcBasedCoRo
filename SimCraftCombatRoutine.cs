@@ -25,7 +25,9 @@ namespace SimcBasedCoRo
         private static readonly WaitTimer _waitForLatencyCheck = new WaitTimer(TimeSpan.FromSeconds(5));
 
         private Composite _combatBehavior;
+        private Composite _preCombatBuffBehavior;
         private WoWSpec _specialization;
+        private Composite _combatBuffBehavior;
 
         #endregion
 
@@ -39,25 +41,49 @@ namespace SimcBasedCoRo
             get { return StyxWoW.Me.Class; }
         }
 
-        public override void OnButtonPress()
-        {
-        }
-
         public override Composite CombatBehavior
         {
             get
             {
                 Specialization = StyxWoW.Me.Specialization;
 
-                if (_combatBehavior != null) return _combatBehavior;
-
-                return null;
+                return _combatBehavior;
             }
         }
 
         public override string Name
         {
             get { return "SimcBasedCoRo"; }
+        }
+
+        public override Composite PreCombatBuffBehavior
+        {
+            get
+            {
+                Specialization = StyxWoW.Me.Specialization;
+
+                return _preCombatBuffBehavior;
+            }
+        }
+
+        public override Composite PullBuffBehavior
+        {
+            get
+            {
+                Specialization = StyxWoW.Me.Specialization;
+
+                return _preCombatBuffBehavior;
+            }
+        }
+
+        public override Composite CombatBuffBehavior
+        {
+            get
+            {
+                Specialization = StyxWoW.Me.Specialization;
+
+                return _combatBuffBehavior;
+            }
         }
 
         private WoWSpec Specialization
@@ -73,21 +99,32 @@ namespace SimcBasedCoRo
                 {
                     case WoWSpec.DeathKnightBlood:
                         _combatBehavior = DeathKnight.BloodActionList();
+                        _combatBuffBehavior = DeathKnight.BloodCombatBuffs();
+                        _preCombatBuffBehavior = DeathKnight.Buffs();
                         break;
                     case WoWSpec.DeathKnightFrost:
                         _combatBehavior = DeathKnight.FrostActionList();
+                        _preCombatBuffBehavior = DeathKnight.Buffs();
                         break;
                     case WoWSpec.DeathKnightUnholy:
                         _combatBehavior = DeathKnight.UnholyActionList();
+                        _preCombatBuffBehavior = DeathKnight.Buffs();
                         break;
                     case WoWSpec.MageArcane:
                         _combatBehavior = Mage.ArcaneActionList();
+                        _preCombatBuffBehavior = Mage.Buffs();
+                        break;
+                    case WoWSpec.PaladinRetribution:
+                        _combatBehavior = Paladin.RetributionActionList();
+                        _preCombatBuffBehavior = Paladin.Buffs();
                         break;
                     case WoWSpec.ShamanEnhancement:
                         _combatBehavior = Shaman.EnhancementActionList();
+                        _preCombatBuffBehavior = Shaman.Buffs();
                         break;
                     case WoWSpec.WarriorArms:
                         _combatBehavior = Warrior.ArmsActionList();
+                        _preCombatBuffBehavior = Warrior.Buffs();
                         break;
                 }
             }
@@ -100,6 +137,10 @@ namespace SimcBasedCoRo
         public override void Initialize()
         {
             HotkeysManager.RegisterHotKeys();
+        }
+
+        public override void OnButtonPress()
+        {
         }
 
         public override void Pulse()
